@@ -1,3 +1,5 @@
 sandbox
 results
 figures
+.snakemake
+logs

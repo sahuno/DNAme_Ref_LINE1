@@ -1,0 +1,12 @@
+software_dir: /data1/greenbab/users/ahunos/apps/containers      # e.g. /home/user1/software (absolute path needed)
+mm10: /data1/greenbab/database/mm10/mm10.fa
+hg38: /data1/greenbab/database/hg38/v0/Homo_sapiens_assembly38.fasta
+windowsBedFile: /data1/greenbab/database/mm10/nonOverlappingWindows/mm10_1kb.sorted.bed
+consRef_human: /tldr/ref/teref.human.fa
+consRef_mm10: /tldr/ref/teref.mouse.fa
+RepE_mm10: /data1/greenbab/database/L1Base/L1base2_NCBIm38/mmflil1_8438_noHeader.sorted.bed
+RepE_hg38: 
+# ref_genome: /data/greenbaum/database/mm10/mm10.fa
+ONT_conda_env: methyl_ONT
+hg38_chrSizes: /data1/greenbab/database/sizes.Homo_sapiens_assembly38
+mm10_chrSizes: /data1/greenbab/database/mm10/mm10.chrom.sizes

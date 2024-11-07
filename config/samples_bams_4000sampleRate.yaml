@@ -1,0 +1,22 @@
+samples:
+    D-0-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-0-1_4000/D-0-1_4000_modBaseCalls_sorted_dup.bam
+    D-0-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-0-2_4000/D-0-2_4000_modBaseCalls_sorted_dup.bam
+    D-0-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-0-3_4000/D-0-3_4000_modBaseCalls_sorted_dup.bam
+    D-A-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-A-1_4000/D-A-1_4000_modBaseCalls_sorted_dup.bam
+    D-A-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-A-2_4000/D-A-2_4000_modBaseCalls_sorted_dup.bam
+    D-A-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-A-3_4000/D-A-3_4000_modBaseCalls_sorted_dup.bam
+    D-C-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-C-1_4000/D-C-1_4000_modBaseCalls_sorted_dup.bam
+    D-C-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-C-2_4000/D-C-2_4000_modBaseCalls_sorted_dup.bam
+    D-C-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-C-3_4000/D-C-3_4000_modBaseCalls_sorted_dup.bam
+    D-Q-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-Q-1_4000/D-Q-1_4000_modBaseCalls_sorted_dup.bam
+    D-Q-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-Q-2_4000/D-Q-2_4000_modBaseCalls_sorted_dup.bam
+    D-Q-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-Q-3_4000/D-Q-3_4000_modBaseCalls_sorted_dup.bam
+    D-QC-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-QC-1_4000/D-QC-1_4000_modBaseCalls_sorted_dup.bam
+    D-QC-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-QC-2_4000/D-QC-2_4000_modBaseCalls_sorted_dup.bam
+    D-QC-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-QC-3_4000/D-QC-3_4000_modBaseCalls_sorted_dup.bam
+    D-S-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-S-1_4000/D-S-1_4000_modBaseCalls_sorted_dup.bam
+    D-S-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-S-2_4000/D-S-2_4000_modBaseCalls_sorted_dup.bam
+    D-S-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-S-3_4000/D-S-3_4000_modBaseCalls_sorted_dup.bam
+    D-SC-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-SC-1_4000/D-SC-1_4000_modBaseCalls_sorted_dup.bam
+    D-SC-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-SC-2_4000/D-SC-2_4000_modBaseCalls_sorted_dup.bam
+    D-SC-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/mark_duplicates/D-SC-3_4000/D-SC-3_4000_modBaseCalls_sorted_dup.bam

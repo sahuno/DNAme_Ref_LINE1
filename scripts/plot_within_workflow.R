@@ -1,10 +1,10 @@
 library(data.table)
 library(tidyverse)
 library(optparse)
-
+library(ggrepel)
 # import polars as pl
 # import argpase as arg
-
+message("begining ploting")
 library("optparse")
 option_list <- list(make_option(c("-f", "--files"), type="character", default = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-1_5000_4000/overlaps/D-0-1_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-2_5000_4000/overlaps/D-0-2_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-3_4000/overlaps/D-0-3_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-A-1_4000/overlaps/D-A-1_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed", help="files to process"),
 make_option(c("-m", "--metadata"), type="character", default= "/data1/greenbab/projects/methylRNA/Methyl2Expression/data/preprocessed/RNA_seq/metadata_triplicates_DNArecoded.csv"))
@@ -12,10 +12,15 @@ make_option(c("-m", "--metadata"), type="character", default= "/data1/greenbab/p
 args <- parse_args(OptionParser(option_list=option_list))
 
 list_paths_overlaps <- str_split(args$files, " ")[[1]]
+
 mouseTriEpi_metadata <- read_csv(args$metadata)
 
+# list_paths_overlaps <- list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps/", recursive = TRUE, full.names = TRUE, pattern="_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed")
 
+message("reading bed files")
 DNAmeOverlaps <- lapply(list_paths_overlaps, function(x){fread(x)})
+
+message("done reading bed files")
 names(DNAmeOverlaps) <- basename(list_paths_overlaps)
 
 #get plot tag
@@ -49,7 +54,7 @@ DNAmeOverlaps_repeats2_standChrom %>% group_by(samples) %>% summarise(n())
 #at least 5 valid cpgs
 DNAmeOverlaps_repeats2_standChromFiltered <- DNAmeOverlaps_repeats2_standChrom %>% filter(count > 5)
 
-DNAmeOverlaps_repeats2_standChromFiltered %>% group_by(samples) %>% summarise(n())
+# DNAmeOverlaps_repeats2_standChromFiltered %>% group_by(samples) %>% summarise(n())
 
 # DNAmeOverlaps_repeats[V1 == "chr",]
 boxPlot_DNAmeMean <- ggplot(data= DNAmeOverlaps_repeats2_standChromFiltered, aes(samples, mean)) + geom_boxplot() + 
@@ -85,3 +90,42 @@ ggsave(boxPlot_ValidCpGs, filename = paste0("boxPlot_ValidCpGs_", PlotTag, ".png
 
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R
+
+##### plot individual line1 ### 
+# split(DNAmeOverlaps_repeats2_standChromFiltered, by = RepeatID)
+# l1 <- unique(DNAmeOverlaps_repeats2_standChromFiltered$RepeatID)
+
+# RepeatIDGroups <- DNAmeOverlaps_repeats2_standChromFiltered %>% group_by(RepeatID) %>% group_split()
+RepeatIDGroups <- split(DNAmeOverlaps_repeats2_standChromFiltered, as.factor(DNAmeOverlaps_repeats2_standChromFiltered$RepeatID))
+
+# RepeatIDGroups[[1]]
+
+#Que: is there any differnce between line 1 in any condition. that coudl be answered with dmr
+#what is 
+plotL1perCondition <- function(l1Name){
+plotOut <- ggplot(RepeatIDGroups[[l1Name]], aes(x=condition, y=mean, fill=condition) ) + geom_boxplot() + 
+geom_jitter() + 
+geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name, " minCov"), y = "mean 5mCpG_5mCpG") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+}
+
+# plots_plotL1perCondition.pdf
+message("creating dir results/boxplotsRepPerCond/ to save combined plots")
+dir.create("results/boxplotsRepPerCond/")
+pdf(paste0("results/boxplotsRepPerCond/combinedBoxPlot_", PlotTag, ".pdf"))
+lapply(names(RepeatIDGroups), plotL1perCondition)
+dev.off()
+
+# lapply()
+
+# gTest <- ggplot(RepeatIDGroups[[3]], aes(x=condition, y=mean, fill=condition) ) + geom_boxplot() + 
+# geom_jitter() + 
+# geom_text_repel(aes(label=samples)) + labs(title = "", y = "mean 5mCpG_5mCpG")
+
+# ggsave(gTest, filename="testPerGenePlot.png")
+
+# lapply(l1, function(x){
+#   ggplot(data=DNAmeOverlaps_repeats2_standChromFiltered, aes())
+# })
+# if (str_detect(PlotTag, "_CpGIslands") == TRUE){
+  
+# }

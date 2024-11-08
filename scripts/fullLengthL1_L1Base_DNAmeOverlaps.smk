@@ -6,7 +6,7 @@ minCoverages = [5, 10, 15, 20]
 
 
 #to Run: 
-# snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --workflow-profile /data1/greenbab/users/ahunos/apps/configs/snakemake/slurm --jobs unlimited --cores all --keep-going --forceall -np
+# snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --workflow-profile /data1/greenbab/users/ahunos/apps/configs/snakemake/slurm --jobs unlimited --cores all --use-conda -np
 
 # snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --jobs 10 --cores all --keep-going --forceall -np
 
@@ -55,8 +55,8 @@ rule all:
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi', samples=config["samples"],minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz', samples=config["samples"],minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi', samples=config["samples"], minCov = minCoverages),
-        expand("results/DNAme_overlaps/figures/CGI/done.{minCov}.txt", minCov = minCoverages, allow_missing=True),
-        expand("results/DNAme_overlaps/figures/nonCGI/done.{minCov}.txt", minCov = minCoverages, allow_missing=True)
+        expand("results/figures/CGI/done.{minCov}.txt", minCov = minCoverages),
+        expand("results/figures/nonCGI/done.{minCov}.txt", minCov = minCoverages)
 
 rule DNAme_overlaps:
     input:
@@ -83,7 +83,7 @@ rule DNAme_overlaps:
     run:
         if params.sortBedFiles:
             shell("""
-                awk -v min_cov="{params.minCov}" '$10 > min_cov{{print $0}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
+                awk -v min_cov="{params.minCov}" 'BEGIN { OFS = "\t" } ($10 > min_cov) {{$11=$11/100; print}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
                 bgzip -k {output.sortedBed} && tabix -p bed {output.sortedBedGz}
                 
                 bedtools intersect -a {output.sortedBed} -b {params.cpgIsland} > {output.sortedBedCpGIslandsOnly}
@@ -104,13 +104,17 @@ rule plotRegions:
         #'results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
         inL1overlapsDNAme=lambda wildcards: get_Overlaps_minCov(filterKeyword=wildcards.minCov, filterKeyword2="")
     output:
-        CgiPlots="results/DNAme_overlaps/figures/CGI/done.{minCov}.txt",
-        nonCgiPlots="results/DNAme_overlaps/figures/nonCGI/done.{minCov}.txt"
+        CgiPlots="results/figures/CGI/done.{minCov}.txt",
+        nonCgiPlots="results/figures/nonCGI/done.{minCov}.txt"
     conda: "r-env"
+    log:
+      logCGI="logs/figures/nonCGI/plotLog_CGI_minCov.{minCov}.txt",
+      lognoCGI="logs/figures/nonCGI/plotLog_noCGI_minCov.{minCov}.txt"
+
     shell:
         """ 
-        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files {{inL1overlapsCpGIslandsOnly:q}} && touch {output.CgiPlots}
-        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files {{inL1overlapsDNAme:q}} && touch {output.nonCgiPlots}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.inL1overlapsCpGIslandsOnly:q}" 2> {log.logCGI} && touch {output.CgiPlots}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.inL1overlapsDNAme:q}" 2> {log.lognoCGI} && touch {output.nonCgiPlots}
         """
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files {input:q} --metadata 

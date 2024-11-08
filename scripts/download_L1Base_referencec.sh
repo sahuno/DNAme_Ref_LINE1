@@ -48,3 +48,19 @@ done
 
 #retun to parent dir
 cd ../..
+
+# l1File=/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed
+head $l1File > mmflil1_8438_noHeader.sorted.head.bed
+less mmflil1_8438_noHeader.sorted.head.bed
+
+awk 'BEGIN { OFS = "\t" } {
+if ($6 == "+"){
+    $2 = $2 + 400;
+    $3 = $2 + 200
+} else if ($6 == "-") {
+    $3 = $3 - 400; 
+    $2 = $3 - 200
+} 
+print $0
+}' mmflil1_8438_noHeader.sorted.head.bed
+

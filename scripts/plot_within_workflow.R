@@ -2,12 +2,18 @@ library(data.table)
 library(tidyverse)
 library(optparse)
 library(ggrepel)
+
+
 # import polars as pl
 # import argpase as arg
 message("begining ploting")
 library("optparse")
-option_list <- list(make_option(c("-f", "--files"), type="character", default = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-1_5000_4000/overlaps/D-0-1_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-2_5000_4000/overlaps/D-0-2_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-3_4000/overlaps/D-0-3_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-A-1_4000/overlaps/D-A-1_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed", help="files to process"),
+option_list <- list(make_option(c("-f", "--files"), type="character", help="files to process", default = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-1_5000_4000/overlaps/D-0-1_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-2_5000_4000/overlaps/D-0-2_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-3_4000/overlaps/D-0-3_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-A-1_4000/overlaps/D-A-1_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed"),
+# option_list <- list(make_option(c("-f", "--files"), type="character", help="files to process"),
+
 make_option(c("-m", "--metadata"), type="character", default= "/data1/greenbab/projects/methylRNA/Methyl2Expression/data/preprocessed/RNA_seq/metadata_triplicates_DNArecoded.csv"))
+
+# default = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-1_5000_4000/overlaps/D-0-1_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-2_5000_4000/overlaps/D-0-2_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-3_4000/overlaps/D-0-3_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-A-1_4000/overlaps/D-A-1_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed"
 
 args <- parse_args(OptionParser(option_list=option_list))
 
@@ -49,11 +55,22 @@ DNAmeOverlaps_repeats2 <- DNAmeOverlaps_repeats %>% left_join(mouseTriEpi_metada
 
 DNAmeOverlaps_repeats2_standChrom <- DNAmeOverlaps_repeats2 %>% filter(!str_detect(chrom, "chrM|chrY|chrX")) 
 
+# DNAmeOverlaps_repeats2_standChrom %>% filter(count > 0) 
+
+
+
 DNAmeOverlaps_repeats2_standChrom %>% group_by(samples) %>% summarise(n())
 # table(DNAmeOverlaps_repeats2_standChrom$samples, DNAmeOverlaps_repeats2_standChrom$chrom)
 #at least 5 valid cpgs
 DNAmeOverlaps_repeats2_standChromFiltered <- DNAmeOverlaps_repeats2_standChrom %>% filter(count > 5)
 
+
+#assign new ids to plot
+DNAmeOverlaps_repeats2_standChromFiltered$RepeatID <- paste0(DNAmeOverlaps_repeats2_standChromFiltered$chrom, ":",DNAmeOverlaps_repeats2_standChromFiltered$start,"_", DNAmeOverlaps_repeats2_standChromFiltered$end, ":", DNAmeOverlaps_repeats2_standChromFiltered$RepeatID)
+
+message("creating dir results/data/ to save tabless")
+dir.create("results/data/")
+write_tsv(DNAmeOverlaps_repeats2_standChromFiltered, file = paste0("results/data/data_standardChrs_", PlotTag, ".tsv"))
 # DNAmeOverlaps_repeats2_standChromFiltered %>% group_by(samples) %>% summarise(n())
 
 # DNAmeOverlaps_repeats[V1 == "chr",]
@@ -97,6 +114,11 @@ ggsave(boxPlot_ValidCpGs, filename = paste0("boxPlot_ValidCpGs_", PlotTag, ".png
 
 # RepeatIDGroups <- DNAmeOverlaps_repeats2_standChromFiltered %>% group_by(RepeatID) %>% group_split()
 RepeatIDGroups <- split(DNAmeOverlaps_repeats2_standChromFiltered, as.factor(DNAmeOverlaps_repeats2_standChromFiltered$RepeatID))
+
+# DNAmeOverlaps_repeats2_standChromFiltered
+
+
+# RepeatIDGroups$RepeatID <- paste0(RepeatIDGroups[[1]]$chrom, ":",RepeatIDGroups[[1]]$start,"_", RepeatIDGroups[[1]]$end, ":", RepeatIDGroups$RepeatID)
 
 # RepeatIDGroups[[1]]
 

@@ -23,6 +23,26 @@ Sname=$(basename -s .bed $i)
 #remove header
 sed '1d' ${i} | sort -k1,1 -k2,2n >  ${Sname}_noHeader.sorted.bed
 # echo "sed '1d' ${i} | sort -k1,1 -k2,2n >  ${Sname}_noHeader.sorted.bed"
+
+awk 'BEGIN { OFS = "\t" } {
+if ($6 == "+"){
+    $2 = $2 + 400; $3 = $2 + 200 
+} else if ($6 == "-") {
+    $3 = $3 - 400; $2 = $3 - 200
+} 
+print $0
+}' ${Sname}_noHeader.sorted.bed | sort -k1,1 -k2,2n > ${Sname}_noHeader.400_600bp5UTR_sorted.bed
+
+
+##100bp upstream
+awk 'BEGIN { OFS = "\t" } {
+if ($6 == "+"){
+    $3 = $2 + 100 
+} else if ($6 == "-") {
+    $2 = $3 - 100
+} 
+print $0
+}' ${Sname}_noHeader.sorted.bed | sort -k1,1 -k2,2n > ${Sname}_noHeader.100bp5UTR_sorted.bed
 done
 
 #return to database/ directory
@@ -43,6 +63,26 @@ do
 Sname=$(basename -s .bed $i)
 sed '1d' ${i} | sort -k1,1 -k2,2n >  ${Sname}_noHeader.sorted.bed
 # echo "sed '1d' ${i} | sort -k1,1 -k2,2n >  ${Sname}_noHeader.sorted.bed"
+# > ${Sname}_noHeader.bed
+
+awk 'BEGIN { OFS = "\t" } {
+if ($6 == "+"){
+    $2 = $2 + 400; $3 = $2 + 200 
+} else if ($6 == "-") {
+    $3 = $3 - 400; $2 = $3 - 200
+} 
+print $0
+}' ${Sname}_noHeader.sorted.bed | sort -k1,1 -k2,2n > ${Sname}_noHeader.400_600bp5UTR_sorted.bed
+
+##100bp upstream
+awk 'BEGIN { OFS = "\t" } {
+if ($6 == "+"){
+    $3 = $2 + 100 
+} else if ($6 == "-") {
+    $2 = $3 - 100
+} 
+print $0
+}' ${Sname}_noHeader.sorted.bed | sort -k1,1 -k2,2n > ${Sname}_noHeader.100bp5UTR_sorted.bed
 done
 # sort -k1,1 -k2,2n mmflil1_8438_noHeader.bed >  mmflil1_8438_noHeader.sorted.bed
 
@@ -50,17 +90,18 @@ done
 cd ../..
 
 # l1File=/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed
-head $l1File > mmflil1_8438_noHeader.sorted.head.bed
-less mmflil1_8438_noHeader.sorted.head.bed
+# head $l1File > mmflil1_8438_noHeader.sorted.head.bed
+# less mmflil1_8438_noHeader.sorted.head.bed
 
-awk 'BEGIN { OFS = "\t" } {
-if ($6 == "+"){
-    $2 = $2 + 400;
-    $3 = $2 + 200
-} else if ($6 == "-") {
-    $3 = $3 - 400; 
-    $2 = $3 - 200
-} 
-print $0
-}' mmflil1_8438_noHeader.sorted.head.bed
+# awk 'BEGIN { OFS = "\t" } {
+# if ($6 == "+"){
+#     $2 = $2 + 400; $3 = $2 + 200 
+# } else if ($6 == "-") {
+#     $3 = $3 - 400; $2 = $3 - 200
+# } 
+# print $0
+# }' mmflil1_8438_noHeader.sorted.head.bed
 
+
+
+# sh /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/download_L1Base_referencec.sh

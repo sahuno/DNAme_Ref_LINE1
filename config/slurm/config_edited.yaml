@@ -1,0 +1,33 @@
+default-resources:
+    slurm_partition: "componc_cpu"
+    slurm_account: "greenbab"
+    runtime: 120 # 2hrs
+    mem_mb_per_cpu: 16000 #16GB
+    cpus_per_task: 8
+    nodes: 1
+executor: slurm
+
+set-resources:
+    modkit:
+        slurm_partition: "componc_cpu" # deviating partition for this rule 
+        slurm_account: "greenbab"
+        nodes: 1
+        runtime: 120 
+        mem_mb_per_cpu: 16000
+        cpus_per_task: 8
+
+#snakemake run options
+keep-incomplete: True
+# --singularity-args: "\"--bind /data1/greenbab\""
+# use-conda: True
+jobs: 10
+keep-going: True
+rerun-incomplete: True
+restart-times: 2
+printshellcmds: True
+# shadow-prefix: /scratch/ntpierce
+latency-wait: 360
+forceall: True
+#cmd options
+#https://snakemake.readthedocs.io/en/stable/executing/cli.html
+#https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html

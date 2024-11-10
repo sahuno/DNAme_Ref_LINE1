@@ -17,6 +17,7 @@ minCoverages = [5, 10, 15, 20]
 #to rerun without interfeerance
 # rm -rf .snakemake logs results *.png
 
+#l .snakemake/slurm_logs/rule_DNAme_overlaps/D-Q-2_4000_5/
 
 ###TODO: 
 #how about promoter line1?
@@ -36,8 +37,14 @@ def getSpecificSamplesPaths(filterKeyword):
 #     listFiles=glob.glob(pattern, recursive=True)
 #     return listFiles
 
-def get_Overlaps_minCov(filterKeyword, filterKeyword2):
-    pattern = f'results/DNAme_overlaps/*/overlaps/*minCov{filterKeyword}*{filterKeyword2}.bed'
+# def get_Overlaps_minCov(filterKeyword, filterKeyword2):
+#     pattern = f'results/DNAme_overlaps/*/overlaps/*minCov{filterKeyword}*{filterKeyword2}.bed'
+#     listFiles=glob.glob(pattern, recursive=True)
+#     return listFiles
+
+##takes paths and mean coverage values 
+def get_Overlaps_minCov(paths, minCoverage):
+    pattern = f'{paths}/*minCov{minCoverage}*.bed'
     listFiles=glob.glob(pattern, recursive=True)
     return listFiles
 
@@ -48,19 +55,23 @@ rule all:
     input:
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed', samples=config["samples"],minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
-        expand('results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"],minCov=minCoverages),
-        expand('results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"],minCov=minCoverages),
+        ##CpGs across the full lengths
+        expand('results/DNAme_overlaps/{samples}/overlaps/fullLength/CpGIs/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"],minCov=minCoverages),
+        expand('results/DNAme_overlaps/{samples}/overlaps/fullLength/nonCGI/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"],minCov=minCoverages),
         #use for dmr
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz', samples=config["samples"],minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi', samples=config["samples"],minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz', samples=config["samples"],minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi', samples=config["samples"], minCov = minCoverages),
         #L1 promoter upstream 
-        expand('results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
-        expand('results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
+        expand('results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/CpGIs/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
+        expand('results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/nonCGI/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
+        expand('results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/CpGIs/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
+        expand('results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/nonCGI/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
+
         ##plot results 
-        expand("results/figures/CGI/done.{minCov}.txt", minCov = minCoverages),
-        expand("results/figures/nonCGI/done.{minCov}.txt", minCov = minCoverages)
+        expand("results/figures/fullLength/CpGIs/done.{minCov}.txt", minCov = minCoverages),
+        expand("results/figures/fullLength/nonCGI/done.{minCov}.txt", minCov = minCoverages)
 
 rule DNAme_overlaps:
     input:
@@ -82,17 +93,20 @@ rule DNAme_overlaps:
         sortedBedCpGIslandsOnlyGz='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
         sortedBedCpGIslandsOnlyGzTbi='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi',
 
-        L1overlapsCpGIslandsOnly='results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
-        L1overlapsDNAme='results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed',
+        L1overlapsCpGIslandsOnly='results/DNAme_overlaps/{samples}/overlaps/fullLength/CpGIs/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
+        L1overlapsDNAme='results/DNAme_overlaps/{samples}/overlaps/fullLength/nonCGI/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed',
         ##overlaps with L1 promoters; 100bp upstream & 400-600bp upstream 
-        L1_100bp5UTR_overlapsCpGIslandsOnly='results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
-        L1_400_600bp5UTR_overlapsDNAme='results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed'
+        L1_100bp5UTR_overlapsCpGIslandsOnly='results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/CpGIs/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
+        L1_100bp5UTR_overlapsnCpGIslandsOnly='results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/nonCGI/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed',
+        L1_400_600bp5UTR_overlapsCGIs_DNAme='results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/CpGIs/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
+        L1_400_600bp5UTR_overlapsnCGIs_DNAme='results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/nonCGI/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed'
+
     log:
       "logs/DNAme_overlaps/{samples}/{samples}_minCov{minCov}.log"
     run:
         if params.sortBedFiles:
             shell("""
-                awk -v min_cov="{params.minCov}" 'BEGIN {{ OFS = "\t" }} ($10 > min_cov) {{$11=$11/100; print}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
+                awk -v min_cov='{params.minCov}' 'BEGIN {{ OFS = "\\t" }} ($10 > min_cov) {{$11=$11/100; print}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
                 bgzip -k {output.sortedBed} && tabix -p bed {output.sortedBedGz}
                 
                 bedtools intersect -a {output.sortedBed} -b {params.cpgIsland} > {output.sortedBedCpGIslandsOnly}
@@ -101,8 +115,21 @@ rule DNAme_overlaps:
                 bedtools map -a {params.RepeatsFulllengthBed} -b {output.sortedBedCpGIslandsOnly} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsCpGIslandsOnly} 2> {log}
                 bedtools map -a {params.RepeatsFulllengthBed} -b {output.sortedBed} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsDNAme} 2> {log}
 
-                bedtools map -a {params.promoter100bp} -b {output.sortedBedCpGIslandsOnly} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsCpGIslandsOnly} 2> {log}
-                bedtools map -a {params.promoter400_600bp} -b {output.sortedBed} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsDNAme} 2> {log}
+                bedtools map -a {params.promoter100bp} -b {output.sortedBedCpGIslandsOnly} \
+                -c 11,11,11,11,11 -o min,max,mean,median,count \
+                -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsCpGIslandsOnly} 2> {log}
+
+                bedtools map -a {params.promoter100bp} -b {output.sortedBedCpGIslandsOnly} \
+                -c 11,11,11,11,11 -o min,max,mean,median,count \
+                -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsnCpGIslandsOnly} 2> {log}
+
+                bedtools map -a {params.promoter400_600bp} -b {output.sortedBed} \
+                -c 11,11,11,11,11 -o min,max,mean,median,count \
+                -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsCGIs_DNAme} 2> {log}
+
+                bedtools map -a {params.promoter400_600bp} -b {output.sortedBed} \
+                -c 11,11,11,11,11 -o min,max,mean,median,count \
+                -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsnCGIs_DNAme} 2> {log}
             """)
         else:
             shell("""
@@ -119,44 +146,6 @@ rule DNAme_overlaps:
         # L1_400_600bp5UTR_overlapsDNAme='results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed'
 
 
-# rule L1PromoterOV:
-#     input:
-#         lambda wildcards: config["samples"][wildcards.samples]
-#     params:
-#         RepeatsBed="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed",
-#         genomeFile="/data1/greenbab/database/mm10/mm10.sorted.chrom.sizes",
-#         cpgIsland="/data1/greenbab/database/mm10/mm10_CpGIslands.bed",
-#         threads=12,
-#         minCov=minCoverages,
-#         sortBedFiles=True
-#     output:
-#         sortedBed='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed',
-#         sortedBedCpGIslandsOnly='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed',
-#         sortedBedGz='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz',
-#         sortedBedGzTbi='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi',
-#         sortedBedCpGIslandsOnlyGz='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
-#         sortedBedCpGIslandsOnlyGzTbi='results/DNAme_overlaps/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi',
-
-#         L1overlapsCpGIslandsOnly='results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
-#         L1overlapsDNAme='results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed'
-#     log:
-#       "logs/DNAme_overlaps/{samples}/{samples}_minCov{minCov}.log"
-#     run:
-#         if params.sortBedFiles:
-#             shell("""
-#                 awk -v min_cov="{params.minCov}" 'BEGIN { OFS = "\t" } ($10 > min_cov) {{$11=$11/100; print}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
-#                 bgzip -k {output.sortedBed} && tabix -p bed {output.sortedBedGz}
-                
-#                 bedtools intersect -a {output.sortedBed} -b {params.cpgIsland} > {output.sortedBedCpGIslandsOnly}
-#                 bgzip -k {output.sortedBedCpGIslandsOnly} && tabix -p bed {output.sortedBedCpGIslandsOnlyGz}
-
-#                 bedtools map -a {params.RepeatsBed} -b {output.sortedBedCpGIslandsOnly} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsCpGIslandsOnly} 2> {log}
-#                 bedtools map -a {params.RepeatsBed} -b {output.sortedBed} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsDNAme} 2> {log}
-#             """)
-#         else:
-#             shell("""
-#                 bedtools map -a {params.RepeatsBed} -b {input} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.overlapsBed} 2> {log}
-#             """)
 
 
 
@@ -165,21 +154,22 @@ rule DNAme_overlaps:
 #maybe glob.glob the directly
 rule plotRegions:
     input:
-        inL1overlapsCpGIslandsOnly=lambda wildcards: get_Overlaps_minCov(filterKeyword=wildcards.minCov, filterKeyword2="CpGIslands"),
+        L1fullLengthsOverlapsCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/fullLength/CpGIs", minCoverage=wildcards.minCov),
+        L1fullLengthsOverlapsnCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/fullLength/nonCGI", minCoverage=wildcards.minCov)
         #'results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
-        inL1overlapsDNAme=lambda wildcards: get_Overlaps_minCov(filterKeyword=wildcards.minCov, filterKeyword2="")
+        # inL1overlapsDNAme=lambda wildcards: get_Overlaps_minCov(filterKeyword=wildcards.minCov, filterKeyword2="")
     output:
-        CgiPlots="results/figures/CGI/done.{minCov}.txt",
-        nonCgiPlots="results/figures/nonCGI/done.{minCov}.txt"
+        CgiPlots="results/figures/fullLength/CpGIs/done.{minCov}.txt",
+        nonCgiPlots="results/figures/fullLength/nonCGI/done.{minCov}.txt"
     conda: "r-env"
     log:
-      logCGI="logs/figures/nonCGI/plotLog_CGI_minCov.{minCov}.txt",
-      lognoCGI="logs/figures/nonCGI/plotLog_noCGI_minCov.{minCov}.txt"
+      logCGI="logs/figures/fullLength/CpGIs/plotLog_CGI_minCov.{minCov}.txt",
+      lognoCGI="logs/figures/fullLength/nonCGI/plotLog_noCGI_minCov.{minCov}.txt"
 
     shell:
         """ 
-        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.inL1overlapsCpGIslandsOnly:q}" 2> {log.logCGI} && touch {output.CgiPlots}
-        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.inL1overlapsDNAme:q}" 2> {log.lognoCGI} && touch {output.nonCgiPlots}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1fullLengthsOverlapsCGIs:q}" 2> {log.logCGI} && touch {output.CgiPlots}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1fullLengthsOverlapsnCGIs:q}" 2> {log.lognoCGI} && touch {output.nonCgiPlots}
         """
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files {input:q} --metadata 

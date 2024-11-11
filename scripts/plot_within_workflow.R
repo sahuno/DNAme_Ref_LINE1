@@ -9,8 +9,7 @@ library(ggrepel)
 message("begining ploting")
 library("optparse")
 option_list <- list(make_option(c("-f", "--files"), type="character", help="files to process", default = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-1_5000_4000/overlaps/D-0-1_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-2_5000_4000/overlaps/D-0-2_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-3_4000/overlaps/D-0-3_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-A-1_4000/overlaps/D-A-1_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed"),
-# option_list <- list(make_option(c("-f", "--files"), type="character", help="files to process"),
-
+make_option(c("-o", "--outdir"), type="character", help="dir to write to"),
 make_option(c("-m", "--metadata"), type="character", default= "/data1/greenbab/projects/methylRNA/Methyl2Expression/data/preprocessed/RNA_seq/metadata_triplicates_DNArecoded.csv"))
 
 # default = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-1_5000_4000/overlaps/D-0-1_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-2_5000_4000/overlaps/D-0-2_5000_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-0-3_4000/overlaps/D-0-3_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps//D-A-1_4000/overlaps/D-A-1_4000_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10.bed"
@@ -22,6 +21,10 @@ list_paths_overlaps <- str_split(args$files, " ")[[1]]
 mouseTriEpi_metadata <- read_csv(args$metadata)
 
 # list_paths_overlaps <- list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps/", recursive = TRUE, full.names = TRUE, pattern="_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed")
+
+#make ncessary dors
+dir.create(args$outdir)
+
 
 message("reading bed files")
 DNAmeOverlaps <- lapply(list_paths_overlaps, function(x){fread(x)})
@@ -67,10 +70,11 @@ DNAmeOverlaps_repeats2_standChromFiltered <- DNAmeOverlaps_repeats2_standChrom %
 
 #assign new ids to plot
 DNAmeOverlaps_repeats2_standChromFiltered$RepeatID <- paste0(DNAmeOverlaps_repeats2_standChromFiltered$chrom, ":",DNAmeOverlaps_repeats2_standChromFiltered$start,"_", DNAmeOverlaps_repeats2_standChromFiltered$end, ":", DNAmeOverlaps_repeats2_standChromFiltered$RepeatID)
-
+# args$outdir,"/
 message("creating dir results/data/ to save tabless")
-dir.create("results/data/")
-write_tsv(DNAmeOverlaps_repeats2_standChromFiltered, file = paste0("results/data/data_standardChrs_", PlotTag, ".tsv"))
+
+dir.create(paste0(args$outdir,"/data/"))
+write_tsv(DNAmeOverlaps_repeats2_standChromFiltered, file = paste0(args$outdir,"/data/data_standardChrs_", PlotTag, ".tsv"))
 # DNAmeOverlaps_repeats2_standChromFiltered %>% group_by(samples) %>% summarise(n())
 
 # DNAmeOverlaps_repeats[V1 == "chr",]
@@ -79,7 +83,7 @@ boxPlot_DNAmeMean <- ggplot(data= DNAmeOverlaps_repeats2_standChromFiltered, aes
 labs(y = "Mean DNAme" , x = "samples", title = "full length L1 - mmflil1_8438") + 
 facet_wrap(~condition, scales = "free_x") + 
 theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggsave(boxPlot_DNAmeMean, filename = paste0("boxPlot_DNAmeMean_", PlotTag,".png"))
+ggsave(boxPlot_DNAmeMean, filename = paste0(args$outdir,"/boxPlot_DNAmeMean_", PlotTag,".png"))
 # ncol(DNAmeOverlaps_repeats) - 3
 
 
@@ -87,7 +91,7 @@ histogram_DNAmeMean <- ggplot(data= DNAmeOverlaps_repeats2_standChromFiltered, a
 labs(y = "Mean DNAme" , x = "samples", title = "full length L1 - mmflil1_8438") + 
 facet_wrap(~condition + samples, scales = "free") + 
 theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggsave(histogram_DNAmeMean, filename = paste0("histogram_DNAmeMean_", PlotTag,".png"))
+ggsave(histogram_DNAmeMean, filename = paste0(args$outdir,"/histogram_DNAmeMean_", PlotTag,".png"))
 # ncol(DNAmeOverlaps_repeats) - 3
 
 boxPlot_DNAmeMedian <- ggplot(data= DNAmeOverlaps_repeats2_standChromFiltered, aes(samples, median)) + geom_boxplot() + 
@@ -95,7 +99,7 @@ labs(y = "DNAme Median" , x = "samples", title = "full length L1 - mmflil1_8438"
 facet_wrap(~condition, scales = "free_x") + 
 theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggsave(boxPlot_DNAmeMedian, filename = paste0("boxPlot_DNAmeMedian_",PlotTag , ".png"))
+ggsave(boxPlot_DNAmeMedian, filename = paste0(args$outdir,"/boxPlot_DNAmeMedian_",PlotTag , ".png"))
 
 
 boxPlot_ValidCpGs <- ggplot(data= DNAmeOverlaps_repeats2_standChromFiltered, aes(samples, count)) + geom_boxplot() + 
@@ -103,7 +107,7 @@ labs(y = "counts ValidCpGs" , x = "samples", title = "full length L1 - mmflil1_8
 facet_wrap(~condition, scales = "free_x") + 
 theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggsave(boxPlot_ValidCpGs, filename = paste0("boxPlot_ValidCpGs_", PlotTag, ".png"))
+ggsave(boxPlot_ValidCpGs, filename = paste0(args$outdir,"/boxPlot_ValidCpGs_", PlotTag, ".png"))
 
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R
@@ -127,13 +131,19 @@ RepeatIDGroups <- split(DNAmeOverlaps_repeats2_standChromFiltered, as.factor(DNA
 plotL1perCondition <- function(l1Name){
 plotOut <- ggplot(RepeatIDGroups[[l1Name]], aes(x=condition, y=mean, fill=condition) ) + geom_boxplot() + 
 geom_jitter() + 
-geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name, " minCov"), y = "mean 5mCpG_5mCpG") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "mean 5mCpG_5mCpG") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
 }
 
+
+# args$outdir,"/
 # plots_plotL1perCondition.pdf
 message("creating dir results/boxplotsRepPerCond/ to save combined plots")
-dir.create("results/boxplotsRepPerCond/")
-pdf(paste0("results/boxplotsRepPerCond/combinedBoxPlot_", PlotTag, ".pdf"))
+
+dir.create(paste0(args$outdir,"/boxplotsRepPerCond/"))
+
+
+# dir.create("results/boxplotsRepPerCond/")
+pdf(paste0(args$outdir,"/boxplotsRepPerCond/combinedBoxPlot_", PlotTag, ".pdf"))
 lapply(names(RepeatIDGroups), plotL1perCondition)
 dev.off()
 

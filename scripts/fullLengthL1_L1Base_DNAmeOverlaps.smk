@@ -6,7 +6,7 @@ minCoverages = [5, 10, 15, 20]
 
 
 #to Run: 
-# snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --workflow-profile /data1/greenbab/users/ahunos/apps/configs/snakemake/slurm --jobs unlimited --cores all --use-conda -np
+# snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurm --jobs unlimited --cores all --use-conda -np
 
 # snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --jobs 10 --cores all --keep-going --forceall -np
 
@@ -44,8 +44,10 @@ def getSpecificSamplesPaths(filterKeyword):
 
 ##takes paths and mean coverage values 
 def get_Overlaps_minCov(paths, minCoverage):
-    pattern = f'{paths}/*minCov{minCoverage}*.bed'
+    pattern = f"{paths}/*_minCov{minCoverage}*.bed"
     listFiles=glob.glob(pattern, recursive=True)
+    if not listFiles:
+        print(f"Warning: No files found for pattern {pattern}")
     return listFiles
 
 # get_Overlaps_minCov(filterKeyword=15, filterKeyword2="CpGIslands")
@@ -68,10 +70,16 @@ rule all:
         expand('results/DNAme_overlaps/{samples}/overlaps/100bp5UTR/nonCGI/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/CpGIs/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
         expand('results/DNAme_overlaps/{samples}/overlaps/400600bp5UTR/nonCGI/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
-
         ##plot results 
-        expand("results/figures/fullLength/CpGIs/done.{minCov}.txt", minCov = minCoverages),
-        expand("results/figures/fullLength/nonCGI/done.{minCov}.txt", minCov = minCoverages)
+        expand("results/figures/fullLength/CpGIs/done.{minCov}.txt", minCov=minCoverages),
+        expand("results/figures/fullLength/nonCGI/done.{minCov}.txt", minCov=minCoverages),
+        expand("results/figures/100bp5UTR/CpGIs/done.{minCov}.txt", minCov=minCoverages),
+        expand("results/figures/100bp5UTR/nonCGI/done.{minCov}.txt", minCov=minCoverages),
+        expand("results/figures/400600bp5UTR/CpGIs/done.{minCov}.txt", minCov=minCoverages),
+        expand("results/figures/400600bp5UTR/nonCGI/done.{minCov}.txt", minCov=minCoverages)
+
+        # expand("results/figures/fullLength/CpGIs/done.{minCov}.txt", minCov = minCoverages),
+        # expand("results/figures/fullLength/nonCGI/done.{minCov}.txt", minCov = minCoverages)
 
 rule DNAme_overlaps:
     input:
@@ -106,7 +114,7 @@ rule DNAme_overlaps:
     run:
         if params.sortBedFiles:
             shell("""
-                awk -v min_cov='{params.minCov}' 'BEGIN {{ OFS = "\\t" }} ($10 > min_cov) {{$11=$11/100; print}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
+                awk -v min_cov='{wildcards.minCov}' 'BEGIN {{ OFS = "\\t" }} ($10 > min_cov) {{$11=$11/100; print}}' "{input}" | sort -k1,1 -k2,2n > {output.sortedBed}
                 bgzip -k {output.sortedBed} && tabix -p bed {output.sortedBedGz}
                 
                 bedtools intersect -a {output.sortedBed} -b {params.cpgIsland} > {output.sortedBedCpGIslandsOnly}
@@ -155,22 +163,45 @@ rule DNAme_overlaps:
 rule plotRegions:
     input:
         L1fullLengthsOverlapsCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/fullLength/CpGIs", minCoverage=wildcards.minCov),
-        L1fullLengthsOverlapsnCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/fullLength/nonCGI", minCoverage=wildcards.minCov)
+        L1fullLengthsOverlapsnCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/fullLength/nonCGI", minCoverage=wildcards.minCov),
         #'results/DNAme_overlaps/{samples}/overlaps/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
         # inL1overlapsDNAme=lambda wildcards: get_Overlaps_minCov(filterKeyword=wildcards.minCov, filterKeyword2="")
+        l1_100bp5UTRCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/100bp5UTR/CpGIs", minCoverage=wildcards.minCov),
+        l1_100bp5UTRnCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/100bp5UTR/nonCGI", minCoverage=wildcards.minCov),
+        L1_400_600bp5UTRCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/400600bp5UTR/CpGIs", minCoverage=wildcards.minCov),
+        L1_400_600bp5UTRnCGIs=lambda wildcards: get_Overlaps_minCov(paths="results/DNAme_overlaps/*/overlaps/400600bp5UTR/nonCGI", minCoverage=wildcards.minCov)
+
     output:
-        CgiPlots="results/figures/fullLength/CpGIs/done.{minCov}.txt",
-        nonCgiPlots="results/figures/fullLength/nonCGI/done.{minCov}.txt"
+        outFLCgiPlots="results/figures/fullLength/CpGIs/done.{minCov}.txt",
+        outFLnonCgiPlots="results/figures/fullLength/nonCGI/done.{minCov}.txt",
+        out100CGI="results/figures/100bp5UTR/CpGIs/done.{minCov}.txt",
+        out100noCGI="results/figures/100bp5UTR/nonCGI/done.{minCov}.txt",
+        out4_600CGI="results/figures/400600bp5UTR/CpGIs/done.{minCov}.txt",
+        out4_600nCGI="results/figures/400600bp5UTR/nonCGI/done.{minCov}.txt",
+        # "results/figures/*/CpGIs/done.{minCov}.txt",
+        # "results/figures/*/nonCGI/done.{minCov}.txt",
     conda: "r-env"
     log:
-      logCGI="logs/figures/fullLength/CpGIs/plotLog_CGI_minCov.{minCov}.txt",
-      lognoCGI="logs/figures/fullLength/nonCGI/plotLog_noCGI_minCov.{minCov}.txt"
+      logFLCGI="logs/figures/fullLength/CpGIs/plotLog_CGI_minCov.{minCov}.txt",
+      logFLnoCGI="logs/figures/fullLength/nonCGI/plotLog_noCGI_minCov.{minCov}.txt",
+#add  
+      log100CGI="logs/figures/100bp5UTR/CpGIs/plotLog_CGI_minCov.{minCov}.txt",
+      log100noCGI="logs/figures/100bp5UTR/nonCGI/plotLog_noCGI_minCov.{minCov}.txt",
+      log4_600CGI="logs/figures/400600bp5UTR/CpGIs/plotLog_CGI_minCov.{minCov}.txt",
+      log4_600noCGI="logs/figures/400600bp5UTR/nonCGI/plotLog_noCGI_minCov.{minCov}.txt"
 
     shell:
         """ 
-        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1fullLengthsOverlapsCGIs:q}" 2> {log.logCGI} && touch {output.CgiPlots}
-        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1fullLengthsOverlapsnCGIs:q}" 2> {log.lognoCGI} && touch {output.nonCgiPlots}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1fullLengthsOverlapsCGIs:q}" --outdir "results/figures/fullLength/CpGIs" 2> {log.logFLCGI} && touch {output.outFLCgiPlots}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1fullLengthsOverlapsnCGIs:q}" --outdir "results/figures/fullLength/nonCGI" 2> {log.logFLnoCGI} && touch {output.outFLnonCgiPlots}
+
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.l1_100bp5UTRCGIs:q}" --outdir "results/figures/100bp5UTR/CpGIs" 2> {log.log100CGI} && touch {output.out100CGI}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.l1_100bp5UTRnCGIs:q}" --outdir "results/figures/100bp5UTR/nonCGI" 2> {log.log100noCGI} && touch {output.out100noCGI}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1_400_600bp5UTRCGIs:q}" --outdir "results/figures/400600bp5UTR/CpGIs" 2> {log.log4_600CGI} && touch {output.out4_600CGI}
+        Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files "{input.L1_400_600bp5UTRnCGIs:q}" --outdir "results/figures/400600bp5UTR/nonCGI" 2> {log.log4_600noCGI} && touch {output.out4_600nCGI}
+
         """
+
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R --files {input:q} --metadata 
 

@@ -28,6 +28,10 @@ counts_path <- paste0(rna_path, "/CT/squire_te_fwd.tsv")
 # counts_df <- read_tsv(counts_path)
 counts_df <- fread(counts_path)
 
+metadata <- "/data1/greenbab/projects/methylRNA/Methyl2Expression/data/preprocessed/RNA_seq/metadata_triplicates_DNArecoded.csv"
+mouseTriEpi_metadata <- read_csv(metadata)
+
+
 dim(counts_df)
 rownames(counts_df) <- counts_df$te.id
 head(counts_df)
@@ -249,8 +253,8 @@ l1_keys <- l1_keys %>% pivot_longer(cols = starts_with("R."), names_to="RNAsampl
 
 
 # names(df_bed) <- 
-DNAmeOverlaps <- lapply(paths_fullLength_CpGIs, function(x){fread(x, col.names = c("chrom", "start", "end", "RepeatID", "score", "strand", "start2", "end2", "color", "min", "max", "mean", "median", "count"))})
-names(DNAmeOverlaps) <- basename(paths_fullLength_CpGIs)
+DNAmeOverlaps <- lapply(paths_fullLength_nonCpGIs, function(x){fread(x, col.names = c("chrom", "start", "end", "RepeatID", "score", "strand", "start2", "end2", "color", "min", "max", "mean", "median", "count"))})
+names(DNAmeOverlaps) <- basename(paths_fullLength_nonCpGIs)
 
 
 # gUtils::gr.findoverlaps(makeGRangesFromDataFrame(DNAmeOverlaps[[1]], keep.extra.columns = TRUE), subject=gr_rna, first=FALSE,  qcol = c("RepeatID", "mean", "count"), scol=c("consensus" ,      "clade"  ,     "class" ,    "R.0.1",   "R.0.2",  "R.0.3" ,    "R.A.1" ,    "R.A.2" ,    "R.A.3"))
@@ -266,7 +270,7 @@ OverlapsDNAmeRNA <- lapply(DNAmeOverlaps, function(x){
 
 
 
-lapply(OverlapsDNAmeRNA, length)
+# lapply(OverlapsDNAmeRNA, length)
 # DNAmeOverlaps_df <- rbindlist(DNAmeOverlaps, idcol = "sample")
 
 OverlapsDNAmeRNA_df <- rbindlist(OverlapsDNAmeRNA, idcol = "samples")
@@ -276,13 +280,42 @@ OverlapsDNAmeRNA_df[, minCov:=(str_extract(samples, "minCov[0-9]*"))]
 OverlapsDNAmeRNA_df[, samples:=(str_extract(samples, "^[^_]+"))]
 OverlapsDNAmeRNA_df_joined <- OverlapsDNAmeRNA_df %>% left_join(l1_keys, by = c("samples", "RepeatID"))
 
+OverlapsDNAmeRNA_df_joined <- OverlapsDNAmeRNA_df_joined %>% left_join(mouseTriEpi_metadata)
+ 
 OverlapsDNAmeRNA_df_joined %>% filter(is.na(cpm))
 #so now remove anything aside these samples [A-Z]-[0|A] - [1-3]
-DMSO_AZaL1DNAmeCPM <- OverlapsDNAmeRNA_df_joined %>% filter(str_detect(samples, "D-0|D-A"))
+DMSO_AZaL1DNAmeCPM <- OverlapsDNAmeRNA_df_joined %>% filter(str_detect(samples, "D-0|D-A") & minCov == "minCov5")
+
+DMSO_AZaL1DNAmeCPM_sorted <- DMSO_AZaL1DNAmeCPM %>% group_by(condition) %>% arrange(cpm, .by_group = TRUE) %>% ungroup()
+# unique(DMSO_AZaL1DNAmeCPM_sorted$RepeatID)
+# DMSO_L1DNAmeCPM <- DMSO_AZaL1DNAmeCPM %>% filter(str_detect(samples, "D-0") & minCov == "minCov5")
+
+DMSO_AZaL1DNAmeCPM_sorted$mean <- as.numeric(DMSO_AZaL1DNAmeCPM_sorted$mean)
+DMSO_AZaL1DNAmeCPM_sorted$RepeatID <- paste0(DMSO_AZaL1DNAmeCPM_sorted$`seqnames.x`, ":",DMSO_AZaL1DNAmeCPM_sorted$`start.x`,"_", DMSO_AZaL1DNAmeCPM_sorted$`end.x`, ":", DMSO_AZaL1DNAmeCPM_sorted$RepeatID, ":",DMSO_AZaL1DNAmeCPM_sorted$`consensus.x`)
 
 
-DMSO_L1DNAmeCPM <- DMSO_AZaL1DNAmeCPM %>% filter(str_detect(samples, "D-0") & minCov == "minCov5")
-ggplot()
+RepeatIDGroups <- split(DMSO_AZaL1DNAmeCPM_sorted, as.factor(DMSO_AZaL1DNAmeCPM_sorted$RepeatID))
+# names(RepeatIDGroups)
+
+plotL1perCondition <- function(l1Name){
+plotOut <- ggplot(RepeatIDGroups[[l1Name]], aes(x=mean, y=cpm, color=condition)) + geom_point() + 
+geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "cpm", x = "mean DNAme") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+}
+
+
+plotL1SingleCondition <- function(l1Name){
+plotOut <- ggplot(RepeatIDGroups[[l1Name]] %>% dplyr::filter(condition=="DMSO"), aes(x=mean, y=cpm)) + geom_point() + 
+geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "cpm", x = "mean DNAme") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+}
+
+# dir.create("results/boxplotsRepPerCond/")
+pdf(paste0("scatter_DMSOAZA_lspecific_L1RNA_DNAme",".pdf"))
+lapply(names(RepeatIDGroups), plotL1perCondition)
+dev.off()
+
+pdf(paste0("scatter_DMSO_lspecific_L1RNA_DNAme",".pdf"))
+lapply(names(RepeatIDGroups), plotL1SingleCondition)
+dev.off()
 # sum(is.na(OverlapsDNAmeRNA_df_joined$cpm))
 # OverlapsDNAmeRNA_df[, samples:=(str_replace_all(samples, ".", ""))]
 

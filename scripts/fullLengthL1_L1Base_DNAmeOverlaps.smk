@@ -1,6 +1,7 @@
 parent_dir = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/"
 configfile: parent_dir + "config/config.yaml"
-configfile: parent_dir + "config/samples_bed.yaml" #mouse samples
+configfile: parent_dir + "config/samples_5mC_bed.yaml" #mouse samples
+# configfile: parent_dir + "config/samples_bed.yaml" #mouse samples
 
 minCoverages = [5, 10, 15, 20]
 
@@ -135,12 +136,12 @@ rule prepareBedFiles:
 
 rule OverlapsL1PromoterDNAme:
     input:
-        sortedBed='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed',
-        sortedBedCpGIslandsOnly='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed',
-        sortedBedGz='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz',
-        sortedBedGzTbi='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi',
-        sortedBedCpGIslandsOnlyGz='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
-        sortedBedCpGIslandsOnlyGzTbi='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi',
+        sortedBed1='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed',
+        sortedBedCpGIslandsOnly1='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed',
+        sortedBedGz1='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz',
+        sortedBedGzTbi1='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi',
+        sortedBedCpGIslandsOnlyGz1='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
+        sortedBedCpGIslandsOnlyGzTbi1='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi',
 
     output:
         L1overlapsCpGIslandsOnly='results/OverlapsL1PromoterDNAme/{samples}/fullLength/CpGIs/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed',
@@ -161,12 +162,12 @@ rule OverlapsL1PromoterDNAme:
         sortBedFiles=True
     shell:
         """
-        bedtools map -a {params.RepeatsFulllengthBed} -b {input.sortedBedCpGIslandsOnly} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsCpGIslandsOnly}
-        bedtools map -a {params.RepeatsFulllengthBed} -b {input.sortedBed} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsDNAme}
-        bedtools map -a {params.promoter100bp} -b {input.sortedBedCpGIslandsOnly} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsCpGIslandsOnly}
-        bedtools map -a {params.promoter100bp} -b {input.sortedBed} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsnCpGIslandsOnly}
-        bedtools map -a {params.promoter400_600bp} -b {input.sortedBedCpGIslandsOnly} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsCGIs_DNAme}
-        bedtools map -a {params.promoter400_600bp} -b {input.sortedBed} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsnCGIs_DNAme}
+        bedtools map -a {params.RepeatsFulllengthBed} -b {input.sortedBedCpGIslandsOnly1} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsCpGIslandsOnly}
+        bedtools map -a {params.RepeatsFulllengthBed} -b {input.sortedBed1} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1overlapsDNAme}
+        bedtools map -a {params.promoter100bp} -b {input.sortedBedCpGIslandsOnly1} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsCpGIslandsOnly}
+        bedtools map -a {params.promoter100bp} -b {input.sortedBed1} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_100bp5UTR_overlapsnCpGIslandsOnly}
+        bedtools map -a {params.promoter400_600bp} -b {input.sortedBedCpGIslandsOnly1} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsCGIs_DNAme}
+        bedtools map -a {params.promoter400_600bp} -b {input.sortedBed1} -c 11,11,11,11,11 -o min,max,mean,median,count -g {params.genomeFile} > {output.L1_400_600bp5UTR_overlapsnCGIs_DNAme}
         """
 
 

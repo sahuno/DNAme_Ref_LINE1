@@ -22,6 +22,8 @@ mouseTriEpi_metadata <- read_csv(args$metadata)
 
 # list_paths_overlaps <- list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/results/DNAme_overlaps/", recursive = TRUE, full.names = TRUE, pattern="_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed")
 
+# list_paths_overlaps <- c('results/DNAme_overlaps/D-S-3_4000/overlaps/100bp5UTR/CpGIs/D-S-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-C-2_4000/overlaps/100bp5UTR/CpGIs/D-C-2_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-A-3_4000/overlaps/100bp5UTR/CpGIs/D-A-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-0-2_5000_4000/overlaps/100bp5UTR/CpGIs/D-0-2_5000_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-S-2_4000/overlaps/100bp5UTR/CpGIs/D-S-2_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-0-1_5000_4000/overlaps/100bp5UTR/CpGIs/D-0-1_5000_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-SC-1_4000/overlaps/100bp5UTR/CpGIs/D-SC-1_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-Q-2_4000/overlaps/100bp5UTR/CpGIs/D-Q-2_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-QC-3_4000/overlaps/100bp5UTR/CpGIs/D-QC-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-A-1_4000/overlaps/100bp5UTR/CpGIs/D-A-1_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-Q-3_4000/overlaps/100bp5UTR/CpGIs/D-Q-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-0-3_4000/overlaps/100bp5UTR/CpGIs/D-0-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-C-1_4000/overlaps/100bp5UTR/CpGIs/D-C-1_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-QC-1_4000/overlaps/100bp5UTR/CpGIs/D-QC-1_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-SC-2_4000/overlaps/100bp5UTR/CpGIs/D-SC-2_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-Q-1_5000_4000/overlaps/100bp5UTR/CpGIs/D-Q-1_5000_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-S-1_5000_4000/overlaps/100bp5UTR/CpGIs/D-S-1_5000_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-SC-3_4000/overlaps/100bp5UTR/CpGIs/D-SC-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-QC-2_4000/overlaps/100bp5UTR/CpGIs/D-QC-2_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-A-2_4000/overlaps/100bp5UTR/CpGIs/D-A-2_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed', 'results/DNAme_overlaps/D-C-3_4000/overlaps/100bp5UTR/CpGIs/D-C-3_4000_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov10_CpGIslands.bed')
+# args$outdir="results/figures/100bp5UTR/CpGIs"
 #make ncessary dors
 dir.create(args$outdir)
 
@@ -52,7 +54,7 @@ DNAmeOverlaps_repeats <- DNAmeOverlaps_repeats[, lapply(.SD, function(x) {
 cols2Convert <- c("min", "max", "mean", "median", "count")
 DNAmeOverlaps_repeats[, (cols2Convert):=lapply(.SD, as.numeric), .SDcols=cols2Convert]
 
-
+summary(DNAmeOverlaps_repeats$count)
 #join line 1 and metadata
 DNAmeOverlaps_repeats2 <- DNAmeOverlaps_repeats %>% left_join(mouseTriEpi_metadata)
 
@@ -107,9 +109,14 @@ labs(y = "counts ValidCpGs" , x = "samples", title = "full length L1 - mmflil1_8
 facet_wrap(~condition, scales = "free_x") + 
 theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+message("\nsaving plots\n")
+message(paste0(args$outdir,"/boxPlot_ValidCpGs_", PlotTag, ".png"))
+
 ggsave(boxPlot_ValidCpGs, filename = paste0(args$outdir,"/boxPlot_ValidCpGs_", PlotTag, ".png"))
 
+message("box plots and histograms done")
 
+ 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/plot_within_workflow.R
 
 ##### plot individual line1 ### 
@@ -137,7 +144,7 @@ geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "mean 5mCp
 
 # args$outdir,"/
 # plots_plotL1perCondition.pdf
-message("creating dir results/boxplotsRepPerCond/ to save combined plots")
+message("\ncreating dir results/boxplotsRepPerCond/ to save combined plots\n")
 
 dir.create(paste0(args$outdir,"/boxplotsRepPerCond/"))
 
@@ -147,6 +154,7 @@ pdf(paste0(args$outdir,"/boxplotsRepPerCond/combinedBoxPlot_", PlotTag, ".pdf"))
 lapply(names(RepeatIDGroups), plotL1perCondition)
 dev.off()
 
+message("\ndone goodbye")
 # lapply()
 
 # gTest <- ggplot(RepeatIDGroups[[3]], aes(x=condition, y=mean, fill=condition) ) + geom_boxplot() + 

@@ -4,3 +4,4 @@ figures
 .snakemake
 logs
 database
+*.tsv

@@ -16,7 +16,11 @@ library(NbClust)
 library(GenomicRanges)
 library(gUtils)
 options("width"=200)
+library(janitor)
 
+
+## To  run
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/locusSpecificRNA_DNAmeRate.R
 
 #### program options
 ref_variable = "DMSO"
@@ -90,10 +94,9 @@ ddsResultsDf <- as.data.frame(ddsResults)
 summary(ddsResults)
 
 dds_sf_Disp_L1_cpm <- edgeR::cpm(dds_L1, log = TRUE, prior.count = 2) #prior.count = 2 is added to avoid log(0) error
+dim(dds_sf_Disp_L1_cpm)
 dds_sf_Disp_L1_cpm_df <- as.data.frame(dds_sf_Disp_L1_cpm)
 dds_sf_Disp_L1_cpm_df <- dds_sf_Disp_L1_cpm_df %>% rownames_to_column(var = "te.id")
-
-
 
 ######################################################################################
 #################### create key; DNAme and RNA
@@ -108,11 +111,16 @@ l1Base_entireLength <- fread(l1_path, col.names = c("chrom", "start", "end", "Re
 counts_df_L1 <- counts_df %>% dplyr::filter(str_detect(te.id, "L1")) %>% dplyr::select(`te.id`,`te.name`) #!str_detect(te.id, "HLA")
 counts_df_L1 <- counts_df_L1 %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
 
+
 counts_gr_L1 <- makeGRangesFromDataFrame(counts_df_L1, keep.extra.columns = TRUE)
 
 
 #### find overlaps between l1base a 
 lsRNA_l1Base_keys <- gUtils::gr.findoverlaps(makeGRangesFromDataFrame(l1Base_entireLength, keep.extra.columns = TRUE), subject=counts_gr_L1, first=FALSE,  qcol = c("RepeatID"), scol=c("te.id", "consensus","clade", "class", "number"), return.type = "data.table")
+
+##how many l1base cordiantes overlaps the rna counts data from squire; seems there are repeats `UID-1` mapping multiple loci
+lsRNA_l1Base_keys %>% group_by(RepeatID) %>% summarise(n())
+dim(lsRNA_l1Base_keys)
 # lsRNA_keys %>% filter(!str_detect(seqnames, "chrY|chrM|chrX"))
 ######################################################################################
 ######################################################################################
@@ -129,9 +137,15 @@ dds_sf_Disp_L1_cpm_df_withRepeatID_piv <- dds_sf_Disp_L1_cpm_df_withRepeatID %>%
 
 ########################################
 ### read overlaps data
-list_paths_overlaps <- list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/sandbox/results/OverlapsL1PromoterDNAme/", recursive = TRUE, full.names = TRUE, pattern=".bed")
+list_paths_overlaps <- list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/results/OverlapsL1PromoterDNAme/", recursive = TRUE, full.names = TRUE, pattern=".bed")
 paths_fullLength_nonCpGIs <- list_paths_overlaps[str_detect(list_paths_overlaps,"fullLength/nonCGI")]
 paths_fullLength_nonCpGIs <- paths_fullLength_nonCpGIs[str_detect(paths_fullLength_nonCpGIs,"_minCov5")]
+
+message("\nfilenames of under consideration\n")
+message(paths_fullLength_nonCpGIs)
+message("end of file names")
+
+
 
 DNAmeRatesOverlaps <- lapply(paths_fullLength_nonCpGIs, function(x){fread(x, col.names = c("chrom", "start", "end", "RepeatID", "score", "strand", "start2", "end2", "color", "min", "max", "mean", "median", "count"))})
 names(DNAmeRatesOverlaps) <- basename(paths_fullLength_nonCpGIs)
@@ -141,6 +155,19 @@ DNAmeRatesOverlaps <- rbindlist(DNAmeRatesOverlaps, idcol = "samples")
 DNAmeRatesOverlaps[, minCov:=(str_extract(samples, "minCov[0-9]*"))]
 # OverlapsDNAmeRNA_df[, samples:=(str_extract(samples, ".*(?=_5mCpG)"))]
 DNAmeRatesOverlaps[, samples:=(str_extract(samples, "^[^_]+"))]
+
+#convert to numeric to enable ploting of columns 
+DNAmeRatesOverlaps <- DNAmeRatesOverlaps %>% mutate(across(c("min",   "max",    "mean", "median" , "count"), as.numeric))
+
+
+#sanity checks, how many line with valid results
+nRepeatswithValidDNAmeRateBed <- DNAmeRatesOverlaps %>% filter(count > 0) %>% group_by(samples) %>% summarise(n=n())
+message("\nBegin valid overlaps DNAme")
+nRepeatswithValidDNAmeRateBed
+message("done valid repeats DNAme\n")
+
+# repeats with more than 3 cpgs
+DNAmeRatesOverlaps %>% filter(count > 3) %>% group_by(samples) %>% summarise(n=n())
 
 ##merge Differential repeats (CPM) with DNAmerates computed with bedtools, precedence is given to `dds_sf_Disp_L1_cpm_df_withRepeatID_piv` entries
 DNAmeRatesOverlaps_joined <- dds_sf_Disp_L1_cpm_df_withRepeatID_piv %>% left_join(DNAmeRatesOverlaps, by = c("samples", "RepeatID"))
@@ -154,44 +181,56 @@ DNAmeRatesOverlaps_joined <- DNAmeRatesOverlaps_joined %>% filter(!is.na(RepeatI
 DNAmeRatesOverlaps_joined <- DNAmeRatesOverlaps_joined %>% left_join(metadata_df, by= c("RNAsamples" = "samples"))
 
 
+ctsRepeatsPerSample <- DNAmeRatesOverlaps_joined %>% group_by(RepeatID) %>% summarize(cntsRepeats = n()) %>% print(n = 60) 
+L1_multiMapping <- ctsRepeatsPerSample %>% filter(cntsRepeats > 6) %>% pull(RepeatID)
+DNAmeRatesOverlaps_joined %>% filter(RepeatID %in% L1_multiMapping) %>% dplyr::select(`te.id`,RepeatID) %>% distinct() %>% arrange(RepeatID) %>% dplyr::select(RepeatID, `te.id`) %>% group_by(RepeatID) %>% summarise(countsRNALoci = n())
+# group_by(RepeatID, `te.id`) %>% duplicated() #print(n = 100) 
+
+DNAmeRatesOverlaps_joined %>% group_by(te.id) %>% summarize(cntsRepeats = n())
+# DNAmeRatesOverlaps_joined %>% filter(is.na(mean)) %>% group_by(samples) 
+
+message("repeats counts per sample")
+ctsRepeatsPerSample
 # DNAmeRatesOverlaps_joined
 ###############
 # DNAmeRatesOverlaps_joined$mean <- as.numeric(DNAmeRatesOverlaps_joined$mean)
 DNAmeRatesOverlaps_joined$RepeatID <- paste0(DNAmeRatesOverlaps_joined$chrom, ":",DNAmeRatesOverlaps_joined$start,"_", DNAmeRatesOverlaps_joined$end, ":", DNAmeRatesOverlaps_joined$RepeatID, ":",DNAmeRatesOverlaps_joined$consensus)
 
-DNAmeRatesOverlaps_joined %>% group_by(RepeatID)
+
+
+##write table to disk
+write_tsv(DNAmeRatesOverlaps_joined, file = "L1Base_DNAme_locusSpecificL1_RNA.tsv")
 
 RepeatIDGroups <- split(DNAmeRatesOverlaps_joined, as.factor(DNAmeRatesOverlaps_joined$RepeatID))
 # names(RepeatIDGroups)
 
-plotL1perCondition <- function(l1Name){
-plotOut <- ggplot(RepeatIDGroups[[l1Name]], aes(x=mean, y=cpm, color=condition)) + geom_point() + 
-geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "cpm", x = "mean DNAme") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
-}
+# plotL1perCondition <- function(l1Name){
+# plotOut <- ggplot(RepeatIDGroups[[l1Name]], aes(x=mean, y=cpm, color=condition)) + geom_point() + 
+# geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "cpm", x = "mean DNAme") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+# }
 
 
-plotL1SingleCondition <- function(l1Name){
-plotOut <- ggplot(RepeatIDGroups[[l1Name]] %>% dplyr::filter(condition=="DMSO"), aes(x=mean, y=cpm)) + geom_point() + 
-geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "cpm", x = "mean DNAme") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
-}
+# plotL1SingleCondition <- function(l1Name){
+# plotOut <- ggplot(RepeatIDGroups[[l1Name]] %>% dplyr::filter(condition=="DMSO"), aes(x=mean, y=cpm)) + geom_point() + 
+# geom_text_repel(aes(label=samples)) + labs(title = paste(l1Name), y = "cpm", x = "mean DNAme") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+# }
 
-# dir.create("results/boxplotsRepPerCond/")
-pdf(paste0("scatter_DMSOAZA_lspecific_L1RNA_DNAme",".pdf"))
-lapply(names(RepeatIDGroups), plotL1perCondition)
-dev.off()
+# # dir.create("results/boxplotsRepPerCond/")
+# pdf(paste0("scatter_DMSOAZA_lspecific_L1RNA_DNAme",".pdf"))
+# lapply(names(RepeatIDGroups), plotL1perCondition)
+# dev.off()
 
-pdf(paste0("scatter_DMSO_lspecific_L1RNA_DNAme",".pdf"))
-lapply(names(RepeatIDGroups), plotL1SingleCondition)
-dev.off()
+# pdf(paste0("scatter_DMSO_lspecific_L1RNA_DNAme",".pdf"))
+# lapply(names(RepeatIDGroups), plotL1SingleCondition)
+# dev.off()
 
+# dmso color; #color="#00BFC4"
 
-plotOutAll <- ggplot(DNAmeRatesOverlaps_joined %>% dplyr::filter(condition=="DMSO"), aes(x=mean, y=cpm)) + geom_point(color="#00BFC4") + 
-# geom_text_repel(aes(label=samples)) + 
-labs(title = "Active line1 from L1Base & locus Specific RNA", y = "RNA/cpm", x = "DNA methylation/mean 5mC_5hmC") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+plotOutAll <- ggplot(DNAmeRatesOverlaps_joined %>% dplyr::filter(condition=="DMSO"), aes(x=mean, y=cpm, color = samples)) + geom_point() + 
+labs(title = "Active line1 from L1Base & locus Specific RNA", y = "RNA/cpm", x = "DNA methylation/mean 5mC") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
 
 plotOutAllConditions <- ggplot(DNAmeRatesOverlaps_joined , aes(x=mean, y=cpm, color=condition)) + geom_point() + 
-# geom_text_repel(aes(label=samples)) + 
-labs(title = "Active line1 from L1Base & locus Specific RNA", y = "RNA/cpm", x = "DNA methylation/mean 5mC_5hmC") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+labs(title = "Active line1 from L1Base & locus Specific RNA", y = "RNA/cpm", x = "DNA methylation/mean 5mC") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
 
 
 ggsave(plotOutAll, filename = "scatter_combined_DMSO_specific_L1RNA_DNAme.png")
@@ -214,3 +253,19 @@ ggsave(plotOutAllConditions, filename = "scatter_combined_DMSO_5Aza_specific_L1R
 
 
 # R.0.1, R.0.2, R.0.3, R.A.1, R.A.2, R.A.3, R.C.1, R.C.2, R.C.3, R.Q.1, R.Q.2, R.Q.3, R.QC.1, R.QC.2, R.QC.3, R.S.1, R.S.2, R.S.3, R.SC.1, R.SC.2, R.SC.3 
+
+
+
+#############################
+#############################
+metadata_df <- metadata_df %>% mutate(new_samples_name = str_replace_all(new_samples_name,"R","D")) 
+
+DNAmeRatesOverlaps_2plot <- DNAmeRatesOverlaps %>% dplyr::filter(samples %in% metadata_df$new_samples_name) %>% left_join(metadata_df, by= c("samples"="new_samples_name"))
+DNAmeRatesOverlaps_2plot_filtered <- DNAmeRatesOverlaps_2plot %>% filter(count >= 3) %>% dplyr::filter(condition=="DMSO")
+
+plotHist <- ggplot(data=DNAmeRatesOverlaps_2plot_filtered, aes(mean)) + geom_histogram() + facet_wrap(~samples) + theme_minimal() +
+labs(x = "mean DNAme", title = "DNA methylation distribution of murine active full length L1 - DMSO")
+ggsave(plotHist, filename="histogram_DNAme.png", width = 9, height = 7) 
+
+#############################
+#############################

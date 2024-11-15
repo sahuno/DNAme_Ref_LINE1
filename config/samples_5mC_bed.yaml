@@ -1,8 +1,8 @@
 samples:
     D-0-1_5000_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/mergedbams_modkit/results/modkit/D-0-1_5000_4000/D-0-1_5000_4000_modpileup_5mC.bed
-    D-S-1_5000_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/mergedbams_modkit/results/modkit/D-S-1_5000_4000/D-S-1_5000_4000_modpileup_5mC.bed
+    # D-S-1_5000_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/mergedbams_modkit/results/modkit/D-S-1_5000_4000/D-S-1_5000_4000_modpileup_5mC.bed
     # D-Q-1_5000_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/mergedbams_modkit/results/modkit/D-Q-1_5000_4000/D-Q-1_5000_4000_modpileup_5mC.bed
-    # D-0-2_5000_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/mergedbams_modkit/results/modkit/D-0-2_5000_4000/D-0-2_5000_4000_modpileup_5mC.bed
+    D-0-2_5000_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/mergedbams_modkit/results/modkit/D-0-2_5000_4000/D-0-2_5000_4000_modpileup_5mC.bed
     # D-C-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-C-2_4000/D-C-2_4000_modpileup_5mC.bed
     # D-S-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-S-3_4000/D-S-3_4000_modpileup_5mC.bed
     # D-QC-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-QC-3_4000/D-QC-3_4000_modpileup_5mC.bed
@@ -16,7 +16,7 @@ samples:
     # D-A-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-A-1_4000/D-A-1_4000_modpileup_5mC.bed
     # D-S-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-S-2_4000/D-S-2_4000_modpileup_5mC.bed
     # # D-0-2_5000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-0-2_5000/D-0-2_5000_modpileup_5mC.bed
-    # D-0-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-0-3_4000/D-0-3_4000_modpileup_5mC.bed
+    D-0-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-0-3_4000/D-0-3_4000_modpileup_5mC.bed
     # D-QC-1_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-QC-1_4000/D-QC-1_4000_modpileup_5mC.bed
     # D-SC-2_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-SC-2_4000/D-SC-2_4000_modpileup_5mC.bed
     # D-A-3_4000: /data1/greenbab/projects/triplicates_epigenetics_diyva/DNA/preprocessed/results/modkit/D-A-3_4000/D-A-3_4000_modpileup_5mC.bed

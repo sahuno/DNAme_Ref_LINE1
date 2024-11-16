@@ -7,3 +7,5 @@ database
 *.tsv
 *.png
 *.pdf
+*.fst
+outputs/

@@ -72,6 +72,12 @@ rule all:
         expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi', samples=config["samples"],minCov = minCoverages),
         expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz', samples=config["samples"],minCov = minCoverages),
         expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi', samples=config["samples"], minCov = minCoverages),
+        expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bedgraph', samples=config["samples"], minCov = minCoverages),
+        expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bw', samples=config["samples"], minCov = minCoverages),
+        expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bedgraph', samples=config["samples"], minCov = minCoverages),
+        expand('results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bw', samples=config["samples"], minCov = minCoverages)
+
+
         # #CpGs across the full lengths
         # expand('results/OverlapsL1PromoterDNAme/{samples}/fullLength/CpGIs/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"],minCov=minCoverages),
         # expand('results/OverlapsL1PromoterDNAme/{samples}/fullLength/nonCGI/{samples}_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"],minCov=minCoverages),
@@ -105,7 +111,11 @@ rule prepareBedFiles:
         sortBedFiles=True
     output:
         sortedBed='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed',
+        sortedBedgraph='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bedgraph',
+        sortedBigWig='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bw',
         sortedBedCpGIslandsOnly='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed',
+        sortedBedGraphsCpGIslandsOnly='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bedgraph',
+        sortedBigWigCpGIslandsOnly='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bw',
         sortedBedGz='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz',
         sortedBedGzTbi='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi',
         sortedBedCpGIslandsOnlyGz='results/prepareBedFiles/{samples}/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
@@ -121,6 +131,11 @@ rule prepareBedFiles:
                 
                 bedtools intersect -a {output.sortedBed} -b {params.cpgIsland} > {output.sortedBedCpGIslandsOnly}
                 bgzip -k {output.sortedBedCpGIslandsOnly} && tabix -p bed {output.sortedBedCpGIslandsOnlyGz}
+
+                awk 'BEGIN {{ OFS = "\\t" }} {{print $1, $2, $3, $11}}' {output.sortedBed} > {output.sortedBedgraph}
+                bedGraphToBigWig {output.sortedBedgraph} {params.genomeFile} {output.sortedBigWig}
+                awk 'BEGIN {{ OFS = "\\t" }} {print $1, $2, $3, $11}' {output.sortedBedCpGIslandsOnly} > {output.sortedBedGraphsCpGIslandsOnly}
+                bedGraphToBigWig {output.sortedBedGraphsCpGIslandsOnly} {params.genomeFile} {output.sortedBigWigCpGIslandsOnly}
             """)
         else:
             shell("""

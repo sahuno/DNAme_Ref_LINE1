@@ -18,3 +18,19 @@ b. sense promoter
 3. DMR case vrs control
 4. compare with RNA
 
+
+Scripts
+1. filter high quality cpgs 
+```
+/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk
+```
+
+2. plot l1 DNAme distributions
+```
+/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/GenomicOverlapsWithR.R
+```
+
+3. locus -specfic line 1 rna vrs dname
+```
+/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/locusSpecificRNA_DNAmeRate.R
+```

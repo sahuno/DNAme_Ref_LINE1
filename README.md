@@ -3,11 +3,18 @@ date ; 11/06/2024
 
 purpose: DNAme of reference line 1
 
+workflows:
+
+
 # run on slurm cluster
+
+1. filter methyl bed files, sort, index & for CpG islands only
 
 ```
 # snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --workflow-profile /data1/greenbab/users/ahunos/apps/configs/snakemake/slurm --jobs unlimited --cores all --keep-going --forceall -np
 ```
+
+
 
 TODO: 
 1. restrict methylation to 

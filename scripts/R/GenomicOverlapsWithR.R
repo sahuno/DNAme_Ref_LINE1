@@ -6,6 +6,7 @@ library(entropy)
 library(tidyverse)
 library("fst")
 
+# read_fst("resultsOverlapsStats_5mCpG_5hmCpG_sortedBed_minCov10.fst")
 # source("/data1/greenbab/users/ahunos/methylONT/utils_onts_downstream.R")
 
 
@@ -16,7 +17,14 @@ library("fst")
 # source("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/GenomicOverlapsWithR.R")
 
 #read bed files
-paths_bed = list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/rerun_test/results/prepareBedFiles/", pattern="*minCov10.bed$",recursive=TRUE, full.names=TRUE)
+paths_bed = list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/rerun_test/results/prepareBedFiles/", pattern="*_minCov10.bed$",recursive=TRUE, full.names=TRUE)
+
+########## read the active l1 files from l1base
+# mm10_fli <- '/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed'
+# mm10_fli <- '/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.100bp5UTR_sorted.bed'
+mm10_fli <- '/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.400_600bp5UTR_sorted.bed'
+
+
 # paths_bed <- paths_bed[1:2]
 # args(write_fst)
 
@@ -25,7 +33,15 @@ paths_bed = list.files("/data1/greenbab/users/ahunos/apps/workflows/methylation_
 
 ######### read data
 message("reading samples bed files")
-ls_data = lapply(paths_bed, fread, col.names = c("chrom", "start", "end", "name", "score", "strand", "tstart", "tend", "color", "coverage", "Freq_5mCpG", "mod", "canon", "other", "del", "fail", "diff", "nocall")) 
+ls_data = lapply(paths_bed, fread, select = c(1, 2, 3, 4,  6,11), col.names = c("chrom", "start", "end", "name",  "strand", "Freq_5mCpG"))
+
+# col.names = c("chrom", "start", "end", "name", null, "strand", null, null, null, null, "Freq_5mCpG", null,null,null, null, null,null, null)
+# select = c(1, 2, 3, 4,  5,11)
+# select = c("chrom", "start", "end", "name",  "strand", "Freq_5mCpG")
+# ) 
+
+# c("chrom", "start", "end", "name", null, "strand", null, null, null, null, "Freq_5mCpG", null,null,null, null, null,null, null)
+
 names(ls_data) <- str_extract(basename(paths_bed), "^[^_]+")
 message("done reading files")
 gr_data <- lapply(ls_data, makeGRangesFromDataFrame, keep.extra.columns = TRUE)
@@ -34,8 +50,6 @@ gr_data <- lapply(ls_data, makeGRangesFromDataFrame, keep.extra.columns = TRUE)
 PlotTag <- gsub(".bed","",str_extract(paths_bed, "5mCpG_[^_]+.*"))[1]
 
 
-########## read the active l1 files from l1base
-mm10_fli <- '/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed'
 
 dt_mfli <- fread(mm10_fli, col.names = c("chrom", "start", "end", "RepeatID", "score", "strand", "start2", "end2", "color"))
 dr_mfli <- makeGRangesFromDataFrame(dt_mfli, keep.extra.columns = TRUE)

@@ -1,4 +1,4 @@
-author: samuel ahuno
+Author: samuel ahuno
 date ; 11/06/2024
 
 purpose: DNAme of reference line 1
@@ -15,6 +15,28 @@ workflows:
 ```
 
 
+2. Genomic Overlaps in R;
+```
+# 400bp - 600bp 
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/GenomicOverlapsWithR.R \
+--bedfiles "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/DNAme_bed/version2/results/prepareBedFiles/nonCpGIslands" \
+--L1ref "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.400_600bp5UTR_sorted.bed" \
+--promoterType "400_600bpPromoter" \
+--suffixBed "_minCov10.bed"
+
+
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/GenomicOverlapsWithR.R \
+--bedfiles "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/DNAme_bed/version2/results/prepareBedFiles/nonCpGIslands" \
+--L1ref "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.400_600bp5UTR_sorted.bed" \
+--promoterType "400_600bpPromoter" \
+--suffixBed "_minCov10.bed"
+
+```
+
+3. locus specific DE RNA-seq & overlaps with DNAme
+```
+scripts/R/locusSpecificRNA_DNAmeRate_with_fstTables.R
+```
 
 TODO: 
 1. restrict methylation to 
@@ -37,7 +59,10 @@ Scripts
 /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/GenomicOverlapsWithR.R
 ```
 
-3. locus -specfic line 1 rna vrs dname
+3. locus-specfic line 1 rna vrs dname
 ```
 /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/locusSpecificRNA_DNAmeRate.R
 ```
+
+
+

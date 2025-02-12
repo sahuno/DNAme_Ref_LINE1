@@ -6,7 +6,7 @@ library(optparse)
 # import argpase as arg
 
 library("optparse")
-option_list <- list(make_option(c("-f", "--files"), type="character",help="files to process"))
+option_list <- list(make_option(c("-f", "--files"), type="character", help="files to process"))
 
 parse_args(OptionParser(option_list=option_list))
 

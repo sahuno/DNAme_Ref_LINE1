@@ -15,7 +15,7 @@ minCoverages = [5, 10, 15, 20]
 #1: what about other stats
 # bedtools map -o collapse #to get all values which could then be used for other stats
 
-#to rerun without interfeerance
+#to rerun without interferance
 # rm -rf .snakemake logs results *.png *.pdf *.fst *.err
 
 #l .snakemake/slurm_logs/rule_DNAme_overlaps/D-Q-2_4000_5/
@@ -65,17 +65,17 @@ def get_Overlaps_minCov(base_path_pattern, minCoverage):
 
 rule all:
     input:
-        expand('results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed', samples=config["samples"],minCov = minCoverages),
-        expand('results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
-        #use for dmr
-        expand('results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz', samples=config["samples"],minCov = minCoverages),
-        expand('results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi', samples=config["samples"],minCov = minCoverages),
-        expand('results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz', samples=config["samples"],minCov = minCoverages),
-        expand('results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi', samples=config["samples"], minCov = minCoverages),
-        expand('results/BedGraphsBigWigs/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bedgraph', samples=config["samples"], minCov = minCoverages),
-        expand('results/BedGraphsBigWigs/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bw', samples=config["samples"], minCov = minCoverages),
-        expand('results/BedGraphsBigWigs/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bedgraph', samples=config["samples"], minCov = minCoverages),
-        expand('results/BedGraphsBigWigs/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bw', samples=config["samples"], minCov = minCoverages)
+        expand('results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed', samples=config["samples"],minCov = minCoverages),
+        expand('results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
+        #will use for DMR
+        expand('results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed.gz', samples=config["samples"],minCov = minCoverages),
+        expand('results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed.gz.tbi', samples=config["samples"],minCov = minCoverages),
+        expand('results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed.gz', samples=config["samples"],minCov = minCoverages),
+        expand('results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi', samples=config["samples"], minCov = minCoverages),
+        expand('results/BedGraphsBigWigs/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bedgraph', samples=config["samples"], minCov = minCoverages),
+        expand('results/BedGraphsBigWigs/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bw', samples=config["samples"], minCov = minCoverages),
+        expand('results/BedGraphsBigWigs/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bedgraph', samples=config["samples"], minCov = minCoverages),
+        expand('results/BedGraphsBigWigs/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bw', samples=config["samples"], minCov = minCoverages)
 
 
         # #CpGs across the full lengths
@@ -86,6 +86,7 @@ rule all:
         # expand('results/OverlapsL1PromoterDNAme/{samples}/100bp5UTR/nonCGI/{samples}_100bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
         # expand('results/OverlapsL1PromoterDNAme/{samples}/400600bp5UTR/CpGIs/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}_CpGIslands.bed', samples=config["samples"], minCov = minCoverages),
         # expand('results/OverlapsL1PromoterDNAme/{samples}/400600bp5UTR/nonCGI/{samples}_400600bp5UTR_5mCpG_5hmCpG_DNAme_mmflil1_8438_Overlaps_minCov{minCov}.bed', samples=config["samples"], minCov = minCoverages),
+        
         # ##plot results 
         # expand("results/figures/fullLength/CpGIs/done.{minCov}.txt", minCov=minCoverages),
         # expand("results/figures/fullLength/nonCGI/done.{minCov}.txt", minCov=minCoverages),
@@ -97,6 +98,7 @@ rule all:
         # expand("results/figures/fullLength/CpGIs/done.{minCov}.txt", minCov = minCoverages),
         # expand("results/figures/fullLength/nonCGI/done.{minCov}.txt", minCov = minCoverages)
 
+#########################
 ############
 #filter .bed file with minCoverage, sort, tabiz and gzip resulting file
 rule prepareBedFiles:
@@ -113,12 +115,12 @@ rule prepareBedFiles:
         sortBedFiles=True,
         SoftwareBedGraphToBigWig="/data1/greenbab/users/ahunos/apps/ucsc_tools/bedGraphToBigWig"
     output:
-        sortedBed='results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed',
-        sortedBedCpGIslandsOnly='results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed',
-        sortedBedGz='results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz',
-        sortedBedGzTbi='results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed.gz.tbi',
-        sortedBedCpGIslandsOnlyGz='results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
-        sortedBedCpGIslandsOnlyGzTbi='results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi'
+        sortedBed='results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed',
+        sortedBedCpGIslandsOnly='results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed',
+        sortedBedGz='results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed.gz',
+        sortedBedGzTbi='results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed.gz.tbi',
+        sortedBedCpGIslandsOnlyGz='results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed.gz',
+        sortedBedCpGIslandsOnlyGzTbi='results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed.gz.tbi'
     log:
       "logs/prepareBedFiles/{samples}/{samples}_minCov{minCov}.log"
     run:
@@ -145,16 +147,16 @@ rule prepareBedFiles:
 #make BigWigs and Bedgraphs efficient overlaps
 rule BedGraphsBigWigs:
     input:
-        inSortedBed='results/prepareBedFiles/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bed',
-        inSortedBedCpGIslandsOnly='results/prepareBedFiles/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bed',
+        inSortedBed='results/prepareBedFiles/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bed',
+        inSortedBedCpGIslandsOnly='results/prepareBedFiles/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bed',
     params:
         genomeFile="/data1/greenbab/database/mm10/mm10.sorted.chrom.sizes",
         SoftwareBedGraphToBigWig="/data1/greenbab/users/ahunos/apps/ucsc_tools/bedGraphToBigWig"
     output:
-        sortedBedgraph='results/BedGraphsBigWigs/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bedgraph',
-        sortedBigWig='results/BedGraphsBigWigs/{samples}/nonCpGIslands/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}.bw',
-        sortedBedGraphsCpGIslandsOnly='results/BedGraphsBigWigs/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bedgraph',
-        sortedBigWigCpGIslandsOnly='results/BedGraphsBigWigs/{samples}/CpGIslandsOnly/{samples}_5mCpG_5hmCpG_sortedBed_minCov{minCov}_CpGIslands.bw',
+        sortedBedgraph='results/BedGraphsBigWigs/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bedgraph',
+        sortedBigWig='results/BedGraphsBigWigs/nonCpGIslands/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}.bw',
+        sortedBedGraphsCpGIslandsOnly='results/BedGraphsBigWigs/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bedgraph',
+        sortedBigWigCpGIslandsOnly='results/BedGraphsBigWigs/CpGIslandsOnly/{samples}/{samples}_CpGs_sortedBed_minCov{minCov}_CpGIslands.bw'
     log:
         "logs/BedGraphsBigWigs/{samples}/{samples}_minCov{minCov}.log"
     shell:

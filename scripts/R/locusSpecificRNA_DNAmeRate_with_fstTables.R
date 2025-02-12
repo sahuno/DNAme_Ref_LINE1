@@ -15,14 +15,16 @@ library(RColorBrewer)
 library(NbClust)
 library(GenomicRanges)
 library(gUtils)
-options("width"=200)
 library(janitor)
 library(fst)
+
+
+options("width"=200)
 
 ## To  run
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/locusSpecificRNA_DNAmeRate.R
 
-#### program options
+#### program options/settings
 ref_variable = "DMSO"
 MIN_ReadsCounts = 10
 smallestGroupSize <- 3
@@ -63,6 +65,7 @@ keepDF <- rowSums(counts_repeats_protein_df[,c(
 
 counts_repeats_protein_df <- counts_repeats_protein_df[keepDF,]
 
+#################
 #create separate id for for repeats and genes
 counts_repeats_protein_df[,genomicElementID:=(fcase(!is.na(te.id), te.id,
                                                     !is.na(gene.id), gene.id ) )]
@@ -142,21 +145,62 @@ l1Base_entireLength <- fread(l1_path, col.names = c("chrom", "start", "end", "Re
 counts_df_L1 <- counts_df %>% dplyr::filter(str_detect(te.id, "L1")) %>% dplyr::select(`te.id`,`te.name`) #!str_detect(te.id, "HLA")
 counts_df_L1 <- counts_df_L1 %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
 
+# table(counts_df_L1$consensus)
 
 counts_gr_L1 <- makeGRangesFromDataFrame(counts_df_L1, keep.extra.columns = TRUE)
-
+#plot l1 width distribution
+counts_gr_L1$SeqWidthSQuIRE <- width(counts_gr_L1)
 
 #### find overlaps between l1base a 
-lsRNA_l1Base_keys <- gUtils::gr.findoverlaps(makeGRangesFromDataFrame(l1Base_entireLength, keep.extra.columns = TRUE), subject=counts_gr_L1, first=FALSE,  qcol = c("RepeatID"), scol=c("te.id", "consensus","clade", "class", "number"), return.type = "data.table")
+l1Base_entireLength_gr <- makeGRangesFromDataFrame(l1Base_entireLength, keep.extra.columns = TRUE)
+l1Base_entireLength_gr$SeqWidth_L1Base <- width(l1Base_entireLength_gr) #add width 
+
+# filter standard chromosomes only
+standard_chromosomes <- paste0("chr", c(1:19, "X", "Y"))  # Exclude "chrM" if not needed
+counts_gr_L1 <- keepSeqlevels(counts_gr_L1, standard_chromosomes, pruning.mode = "coarse")
+
+
+
+lsRNA_l1Base_keys <- gUtils::gr.findoverlaps(l1Base_entireLength_gr, subject=counts_gr_L1, first=FALSE,  qcol = c("RepeatID", "SeqWidth_L1Base"), scol=c("te.id", "consensus","clade", "class", "number", "SeqWidthSQuIRE"), return.type = "data.table")
+##Note that start & End in `lsRNA_l1Base_keys` corresponds to that of Squire Cordinates
+
+# lsRNA_l1Base_keys_minOv50 <- gUtils::gr.findoverlaps(l1Base_entireLength_gr, subject=counts_gr_L1, minoverlap = 10, first=FALSE,  qcol = c("RepeatID", "SeqWidth_L1Base"), scol=c("te.id", "consensus","clade", "class", "number", "SeqWidthSQuIRE"), return.type = "data.table")
+
 
 ##how many l1base cordiantes overlaps the rna counts data from squire; seems there are repeats `UID-1` mapping multiple loci
-lsRNA_l1Base_keys %>% group_by(RepeatID) %>% summarise(n())
+lsRNA_l1Base_keys %>% group_by(RepeatID) %>% summarise(n = n()) %>% dplyr::filter(n > 1)
 dim(lsRNA_l1Base_keys)
+
+# has_overlap <- gr.in(lsRNA_l1Base_keys, lsRNA_l1Base_keys)
+
+
+#merged adjacent regions
+# Convert data.table to GRanges
+lsRNA_l1Base_keys_gr <- dt2gr(lsRNA_l1Base_keys)
+# Apply gr.reduce() with grouping by "RepeatID"
+lsRNA_l1Base_keys_reduced_gr <- gr.reduce(lsRNA_l1Base_keys_gr, by = "RepeatID", ignore.strand = TRUE, span = FALSE)
+head(table(mcols(lsRNA_l1Base_keys_reduced_gr)$RepeatID))
+
+
+#########################
+### convert to bedfile
+# Convert GRanges to a data frame
+# source('/DNAme_Ref_LINE1/scripts/R/gr2bed.R')
+
+
+##pivort longer for ploting
+lsRNA_l1Base_keys_dt <- gUtils::gr2dt(lsRNA_l1Base_keys)
+lsRNA_l1Base_keys_dt_longer <- pivot_longer(lsRNA_l1Base_keys_dt, cols = c(SeqWidthSQuIRE, SeqWidth_L1Base))
+
+l1baseSquireSeqLengths_histogram <- ggplot(lsRNA_l1Base_keys_dt_longer, aes(value) ) + geom_histogram() + facet_wrap(~name)
+ggsave(l1baseSquireSeqLengths_histogram, filename = "overlaps_l1baseSquireSeqLengths_histogram.pdf")
+
+
 # lsRNA_keys %>% filter(!str_detect(seqnames, "chrY|chrM|chrX"))
 ######################################################################################
 ######################################################################################
 
-head(dds_sf_Disp_L1_cpm_df); message('\n');head(lsRNA_l1Base_keys)
+head(dds_sf_Disp_L1_cpm_df); message('\n'); head(lsRNA_l1Base_keys)
 dds_sf_Disp_L1_cpm_df_withRepeatID <- dds_sf_Disp_L1_cpm_df %>% left_join(lsRNA_l1Base_keys %>% dplyr::select(c("RepeatID","te.id", "consensus","clade", "class")), by="te.id") %>% as_tibble()
 
 dds_sf_Disp_L1_cpm_df_withRepeatID <- dds_sf_Disp_L1_cpm_df_withRepeatID %>% filter(!is.na(RepeatID))

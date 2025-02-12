@@ -179,7 +179,7 @@ dim(lsRNA_l1Base_keys)
 lsRNA_l1Base_keys_gr <- dt2gr(lsRNA_l1Base_keys)
 # Apply gr.reduce() with grouping by "RepeatID"
 lsRNA_l1Base_keys_reduced_gr <- gr.reduce(lsRNA_l1Base_keys_gr, by = "RepeatID", ignore.strand = TRUE, span = FALSE)
-head(table(mcols(lsRNA_l1Base_keys_reduced_gr)$RepeatID))
+head(table(mcols(lsRNA_l1Base_keys_reduced_gr)$RepeatID), 20)
 
 
 #########################

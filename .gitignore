@@ -9,3 +9,4 @@ database
 *.pdf
 *.fst
 outputs/
+scripts/*.bed

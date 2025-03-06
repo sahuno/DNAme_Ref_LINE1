@@ -168,18 +168,63 @@ lsRNA_l1Base_keys <- gUtils::gr.findoverlaps(l1Base_entireLength_gr, subject=cou
 
 
 ##how many l1base cordiantes overlaps the rna counts data from squire; seems there are repeats `UID-1` mapping multiple loci
-lsRNA_l1Base_keys %>% group_by(RepeatID) %>% summarise(n = n()) %>% dplyr::filter(n > 1)
+lsRNA_l1Base_keys_groups <- lsRNA_l1Base_keys %>% group_by(RepeatID) %>% summarise(n = n()) %>% dplyr::filter(n > 1)
 dim(lsRNA_l1Base_keys)
-
+keysplot <- lsRNA_l1Base_keys_groups %>% ungroup() %>% ggplot(aes(n)) + geom_histogram() + labs(title = "distribution of SquireL1 that overlapped full length L1 Base")
+ggsave(keysplot, filename = "histogram_full_length_l1.pdf") 
 # has_overlap <- gr.in(lsRNA_l1Base_keys, lsRNA_l1Base_keys)
 
 
-#merged adjacent regions
-# Convert data.table to GRanges
+##### merge adjacent regions
+#### Convert data.table to GRanges
 lsRNA_l1Base_keys_gr <- dt2gr(lsRNA_l1Base_keys)
 # Apply gr.reduce() with grouping by "RepeatID"
 lsRNA_l1Base_keys_reduced_gr <- gr.reduce(lsRNA_l1Base_keys_gr, by = "RepeatID", ignore.strand = TRUE, span = FALSE)
 head(table(mcols(lsRNA_l1Base_keys_reduced_gr)$RepeatID), 20)
+
+## 
+lsRNA_l1Base_keys_reduced_dt <- gr2dt(lsRNA_l1Base_keys_reduced_gr)
+lsRNA_l1Base_keys_reduced_gr_groups  <- lsRNA_l1Base_keys_reduced_dt %>% dplyr::group_by(RepeatID) %>% summarise(n = n()) %>% dplyr::filter(n > 1)
+keysplot_red <- lsRNA_l1Base_keys_reduced_gr_groups %>% ungroup() %>% ggplot(aes(n)) + geom_histogram() + labs(title = "distribution of SquireL1 that overlapped full length L1 Base")
+ggsave(keysplot_red, filename = "histogram_full_length_l1_reduced.pdf") 
+
+lsRNA_l1Base_keys_reduced_dt %>% dplyr::filter(RepeatID %in% c("UID-100")) %>% mutate(pos = paste0(seqnames, ":",start,"-" ,end)) %>% dplyr::select(pos, RepeatID, te.id)
+
+##pairwise distances, test
+# distanceToNearest(lsRNA_l1Base_keys_reduced_gr)
+head_lsRNA_l1Base_keys_reduced_gr <- head(lsRNA_l1Base_keys_reduced_gr)
+head_lsRNA_l1Base_keys_reduced_gr_split <- split(head_lsRNA_l1Base_keys_reduced_gr, head_lsRNA_l1Base_keys_reduced_gr$RepeatID)
+lapply(head_lsRNA_l1Base_keys_reduced_gr_split, function(x){gr.dist(x)})
+
+#pairwise distances for all
+##Note: for all the squire RNA cordinates that 
+lsRNA_l1Base_keys_reduced_pairwiseDistance <- lapply(split(lsRNA_l1Base_keys_reduced_gr, lsRNA_l1Base_keys_reduced_gr$RepeatID), function(x){gr.dist(sort(x))})
+
+####################################################################################################
+#plot groups
+####################################################################################################
+# lsRNA_l1Base_keys_reduced_dt[RepeatID == "UID-100",]
+# Unit test with a UID-100
+# lsRNA_l1Base_keys_reduced_dt_UID100 <- data.table::copy(lsRNA_l1Base_keys_reduced_dt[RepeatID == "UID-100",])
+
+lsRNA_l1Base_keys_reduced_dt_by <- copy(lsRNA_l1Base_keys_reduced_dt)[order(seqnames, start), distance := data.table::shift(start, n=1L, type = "lead", fill = "NA") - end - 1, by = RepeatID]
+
+# lsRNA_l1Base_keys_reduced_dt_by
+
+#### long way;
+# lsRNA_l1Base_keys_reduced_dt_list <- split(lsRNA_l1Base_keys_reduced_dt, by = "RepeatID")
+# lsRNA_l1Base_keys_reduced_dt_list_sorted <- lapply(lsRNA_l1Base_keys_reduced_dt_list, function(x) {x[order(start), distance := data.table::shift(start, n=1L, type = "lead") - end - 1]})
+#### long way; ended
+# lsRNA_l1Base_keys_reduced_dt_list_sorted[['UID-2809']]
+
+# lsRNA_l1Base_keys_reduced_dt_UID100[order(start), `:=`(distance = shift(start, type = "lead")- end - 1)]
+# lsRNA_l1Base_keys_reduced_dt_UID100[order(start), `:=`(distance = data.table::shift(start, n=1L, fill=x[.N],type = "lead") - end - 1)]
+# [, ] lsRNA_l1Base_keys_reduced_dt_UID100[.N]
+
+
+# start, n = 1L, type = "lead"
+####################################################################################################
+####################################################################################################
 
 
 #########################
@@ -187,6 +232,8 @@ head(table(mcols(lsRNA_l1Base_keys_reduced_gr)$RepeatID), 20)
 # Convert GRanges to a data frame
 # source('/DNAme_Ref_LINE1/scripts/R/gr2bed.R')
 
+#pick largest SquireRepeats Cordinates
+lsRNA_l1Base_keys %>% group_by(RepeatID) %>% filter(SeqWidthSQuIRE == max(SeqWidthSQuIRE))
 
 ##pivort longer for ploting
 lsRNA_l1Base_keys_dt <- gUtils::gr2dt(lsRNA_l1Base_keys)

@@ -23,7 +23,7 @@ option_list <- list(
         help="cordinates of reference line1 with promoters [default %default]"),
     make_option(c("-p", "--promoterType"), type="character", default="400_600bpPromoter", 
         help="wholeLengthPromoter, 100bpPromoter or 400_600bpPromoter [default %default]"),
-        make_option(c("-b", "--bedfiles"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/rerun_test/results/prepareBedFiles/", 
+        make_option(c("-b", "--bedfiles"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/DNAme_bed/version2/results/prepareBedFiles/nonCpGIslands/", 
         help="path to bed files [default %default]"),
         make_option(c("-s", "--suffixBed"), type="character", default="_minCov10.bed", 
         help="suffix of methylation bed files [default %default]")
@@ -31,6 +31,8 @@ option_list <- list(
 
 # 
 opt <- parse_args(OptionParser(option_list=option_list))
+
+        # make_option(c("-b", "--bedfiles"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/rerun_test/results/prepareBedFiles/", 
 
 
 # read_fst("resultsOverlapsStats_5mCpG_5hmCpG_sortedBed_minCov10.fst")
@@ -77,9 +79,12 @@ message("done reading files")
 gr_data <- lapply(ls_data, makeGRangesFromDataFrame, keep.extra.columns = TRUE)
 
 # paths_bed
-PlotTag <- gsub(".bed","",str_extract(paths_bed, "5mCpG_[^_]+.*"))[1]
+PlotTag <- str_extract(basename(paths_bed), "minCov\\d+")[1]
+# PlotTag <- gsub(".bed","",str_extract(paths_bed, "5mCpG_[^_]+.*"))[1]
 
 
+# opt$promoterType
+# gsub(".*_min","",basename(paths_bed))
 
 dt_mfli <- fread(mm10_fli, col.names = c("chrom", "start", "end", "RepeatID", "score", "strand", "start2", "end2", "color"))
 dr_mfli <- makeGRangesFromDataFrame(dt_mfli, keep.extra.columns = TRUE)
@@ -156,7 +161,7 @@ resultsOverlapsStats_dt <- rbindlist(resultsOverlapsStats, idcol = "samples")
 ##save a fst copy for fast io 
 # ovs1_stats[,summarise(`Freq_5mCpG.N`)]
 message("save .fst results to disk\n")
-write_fst(resultsOverlapsStats_dt, path = paste0("full_Length_L1DNAme_Stats_",PlotTag,".fst"), compress = 100)
+write_fst(resultsOverlapsStats_dt, path = paste0("full_Length_L1DNAme_Stats_",opt$promoterType,"_",PlotTag,".fst"), compress = 100)
 
 
 # message("plotting\n")
@@ -185,11 +190,11 @@ message("saving plots to disk")
 
 # promoterType
 # promoterType
-pdf(paste0("full_Length_L1DNAme_overlaps",opt$promoterType,"DMSO_1samplePerPage",PlotTag,".pdf"), width=9, height=9)
+pdf(paste0("full_Length_L1DNAme_overlaps",opt$promoterType,"_DMSO_1samplePerPage",PlotTag,".pdf"), width=9, height=9)
 lapply(names(resultsOverlapsStats), plotAllStats_perSample)
 dev.off()
 
-pdf(paste0("full_Length_L1DNAme_overlaps",opt$promoterType,"_5AZA_DMSO",PlotTag,".pdf"), width=9, height=7)
+pdf(paste0("full_Length_L1DNAme_overlaps",opt$promoterType,"_5AZA_DMSO_",PlotTag,".pdf"), width=9, height=7)
 lapply(names(list_stats_dt), plotStats_perSample)
 dev.off()
 

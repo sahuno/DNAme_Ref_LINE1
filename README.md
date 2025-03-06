@@ -3,8 +3,11 @@ date ; 11/06/2024
 
 purpose: DNAme of reference line 1
 
-workflows:
+Workflows:
 
+```
+sh /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/run.sh
+```
 
 # run on slurm cluster
 

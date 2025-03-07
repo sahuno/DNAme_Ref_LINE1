@@ -25,6 +25,7 @@ library(gUtils)
 library(janitor)
 library(fst)
 
+options("width"=200)
 #input options:
 ref_variable = "DMSO"
 MIN_ReadsCounts = 10
@@ -33,12 +34,21 @@ set_fst_threads <- 4
 squireCounts_path <- "/data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/CT/squire_te_fwd.tsv"
 counts_annot_path <- '/data1/greenbab/projects/triplicates_epigenetics_diyva/RNA/CT/counts_annot.tsv'
 metadata_path <- "/data1/greenbab/projects/methylRNA/Methyl2Expression/data/preprocessed/RNA_seq/metadata_triplicates_recoded.csv"
-path_map_locusL1_activeFullLen <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mapped_repeatMasker_AssignedTo_L1Base_mm10_mmflil1_8438.tsv"
+path_map_locusL1_activeFullLen11 <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mapped_repeatMasker_AssignedTo_L1Base_mm10_mmflil1_8438.tsv"
+path_map_locusL1_activeFullLen <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mapped_repeatMasker_L1Base.tsv"
 
 sampleNames <- c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3","R.C.1", "R.C.2", "R.C.3", "R.Q.1", "R.Q.2", "R.Q.3","R.QC.1", "R.QC.2", "R.QC.3", "R.S.1", "R.S.2", "R.S.3","R.SC.1", "R.SC.2", "R.SC.3")
 RefAlt_samples <- c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")
 DE_conditions <- data.frame(condition = c("DMSO;AZA", "DMSO;CKi", "DMSO;QSTAT", "DMSO;QSTAT-CKi"))
 threads_fst(set_fst_threads)
+
+##make ref and alt list to run a loop
+REF <- "DMSO"
+ALT <- "AZA"
+REF_LIST <- c("DMSO", "DMSO", "DMSO", "DMSO", "DMSO","DMSO", "DMSO")
+ALT_LIST <- c("AZA", "QSTAT", "CKi", "QSTAT", "QSTAT-CKi", "SETDB1i","SETDB1i-CKi")
+
+MultiDE_conditions <- data.frame(REF = REF_LIST,ALT = ALT_LIST)
 
 #read squire data
 counts_Sq_dt <- fread(squireCounts_path)
@@ -52,6 +62,8 @@ metadata_df <- read.csv(file = metadata_path, sep="," ,header = TRUE)
 #interger counts of repearts
 intsSquire <- counts_Sq_dt[, lapply(.SD, as.integer), .SDcols = !c("te.id", "te.name")]
 
+# countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
+
 
 ##### remove all rows with less than 10 reads, 
 keepDF <- rowSums(intsSquire >= MIN_ReadsCounts) >= smallestGroupSize
@@ -64,17 +76,20 @@ message("Percentage of repeats kept after filtering: ", PercentageRepKept, "%")
 message("Percentage of protein coding genes kept after filtering: ", PercentageCodingKept, "%")
 
 
-# counts_Sq_ints_dt[,keepDF:=keepDF]
-##merge protein coding data and  repeats, all counts matrix become numeric 
+#remove rows with less than 10 reads
 counts_Sq_ints_dt <- cbind(counts_Sq_dt[keepDF,c("te.id", "te.name")],intsSquire[keepDF,])
 counts_Sq_ints_dt[,`gene.type` := "repeats"] ## repeats id
+counts_Sq_ints_dt[,c("chr", "start", "end", "name","number","strand") := tstrsplit(`te.name`, "|", fixed = TRUE)][, c("consensus","clade", "class"):=tstrsplit(name, ":", fixed = TRUE)] ##split the te.name column
+
+counts_Sq_ints_dt[, c("start", "end"):= lapply(.SD, as.integer), .SDcols = c("start", "end")]
+##merge protein coding data and  repeats, all counts matrix become numeric 
 counts_Sq_pCoding_df <- rbind(counts_Sq_ints_dt, counts_annot_pCoding[keepCodingDF,], fill=TRUE)
 
 #create ColumnKey for repeats and protein coding 
-counts_Sq_pCoding_df[,genomicElementID:=(fcase(!is.na(te.id), te.id,
+counts_Sq_pCoding_df[,genomicElementID:=(fcase(!is.na(te.name), te.name,
                                                     !is.na(gene.id), gene.id ) )]
 
-counts_Sq_pCoding_df <- counts_Sq_pCoding_df %>% relocate(sampleNames, .after = last_col())
+counts_Sq_pCoding_df <- counts_Sq_pCoding_df %>% relocate(all_of(sampleNames), .after = last_col())
 
 
 #create ColumnKey for repeats and protein coding 
@@ -88,6 +103,8 @@ counts_Sq_pCoding_df <- counts_Sq_pCoding_df %>% relocate(sampleNames, .after = 
 #step 3: DE analysis
 counts_Sq_pCoding_df_df <- as.data.frame(counts_Sq_pCoding_df)
 rownames(counts_Sq_pCoding_df_df) <- counts_Sq_pCoding_df_df$genomicElementID
+
+# counts_Sq_pCoding_df[grepl("protein_coding", `gene.type`) & grepl("L1", genomicElementID),] #is there L1 names in protein coding genes?  
 
 
 #needed functions
@@ -115,7 +132,10 @@ DeSeq2_res_df <- DeSeq2_res_df %>% tibble::rownames_to_column(var = keyColName)
 return(DeSeq2_res_df)
 }
 
-
+## compute the geometric mean
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
 
 
 
@@ -136,10 +156,10 @@ return(DeSeq2_res_df)
 # #################################
 # # run differenrial gene expression
 # dds <- DESeqDataSetFromMatrix(countData = data.matrix(counts_Sq_pCoding_df_df[,RefAlt_samples]),
-#                               colData = metadata_df,
+#                               colData = metadata_df_short,
 #                               design = ~ condition)
 
-# rowData(dds) <- counts_Sq_pCoding_df_df[, c("gene.type","length","gene.symbol","ensembl.gene.id", "gene.id")]
+# rowData(dds) <- counts_Sq_pCoding_df_df[, c("gene.type","length","gene.symbol","ensembl.gene.id", "gene.id", "name","consensus")]
 
 # #normalise repeats with non-repeats
 # dds <- DESeq(dds)
@@ -202,11 +222,10 @@ return(DeSeq2_res_df)
 
 
 ##########################################
-#### DE; full length L1
+#### DE; function to run loop
 ##########################################
-# metadata_df
-REF <- "DMSO"
-ALT <- "AZA"
+counts_Sq_dt <- fread(path_map_locusL1_activeFullLen)
+
 
 Repeat_DE <- function(data_in, metadata_in, REF, ALT){
 cond_collapsed <- paste0(c("condition",REF, ALT), collapse="_")
@@ -218,7 +237,7 @@ ddsInFunc <- DESeqDataSetFromMatrix(countData = data.matrix(data_in[,metadata_sh
                               colData = metadata_short,
                               design = ~ condition)
 
-rowData(ddsInFunc) <- data_in[, c("gene.type","length","gene.symbol","ensembl.gene.id", "gene.id")]
+rowData(ddsInFunc) <- data_in[, c("gene.type","length","gene.symbol","ensembl.gene.id", "gene.id", "name","consensus")]
 #normalise repeats with non-repeats
 dds_main <- DESeq(ddsInFunc)
 
@@ -233,6 +252,8 @@ ddsProteinCodingResults <- results(dds_pCoding)
 
 #summary of DE results
 ddsL1ResultsDf <- as.data.frame(ddsL1Results)
+ddsRepeatsResultsDf <- as.data.frame(ddsRepeatsResults)
+
 message("summary of locus-Spec L1 DE results")
 message(summary(ddsL1Results))
 message("/n")
@@ -243,8 +264,10 @@ resultsRepeatsShrink <- lfcShrink(dds_Repeats, contrast = c("condition", REF, AL
 # resultsProteinCodingShrink <- lfcShrink(dds_pCoding, contrast = c("condition", REF, ALT), res=ddsProteinCodingResults, type = 'normal')
 
 message("making volcano plots")
-ggsave(plotEVolcano(resultsL1Shrink, title_in=cond_collapsed), filename = paste0("volcano_locusSpecificLINE1_",cond_collapsed,".png"))
-ggsave(plotEVolcano(resultsRepeatsShrink, title_in=cond_collapsed), filename = paste0("volcano_locusSpecificRepeats_",cond_collapsed,".png"))
+volL1Shrink <- plotEVolcano(resultsL1Shrink, title_in=cond_collapsed)
+volRepeatsShrink <- plotEVolcano(resultsRepeatsShrink, title_in=cond_collapsed)
+ggsave(volL1Shrink, filename = paste0("volcano_locusSpecificLINE1_",cond_collapsed,".png"))
+ggsave(volRepeatsShrink, filename = paste0("volcano_locusSpecificRepeats_",cond_collapsed,".png"))
 # ggsave(plotEVolcano(resultsProteinCodingShrink, title_in=cond_collapsed), filename = "volcano_proteinCoding_",cond_collapsed,".png")
 
 #make CPM
@@ -254,15 +277,144 @@ dds_repeats_cpm_df <- makeCPM(DeSeq2_res=dds_Repeats, prior_cnts=2, keyColName="
 
 #save results
 message("saving results to disk")
-results2SaveLspecL1 <- list(dds_main, dds_L1, ddsL1Results, resultsL1Shrink, dds_locusSpecL1_cpm_df)
+results2SaveLspecL1 <- list(ddsMain=dds_main, ddsFiltered=dds_L1, resDF=ddsL1Results, resShrinkedDF=resultsL1Shrink, cpmDF=dds_locusSpecL1_cpm_df, volcano_ggplot = volL1Shrink)
+results2SaveLspecRepeats <- list(ddsMain=dds_main, ddsFiltered=dds_Repeats, resDF=ddsRepeatsResultsDf, resShrinkedDF=resultsRepeatsShrink, cpmDF=dds_repeats_cpm_df, volcano_ggplot = volRepeatsShrink)
 save(results2SaveLspecL1, file=paste0("Differential_locusSpecific_L1ExpressionResults_",cond_collapsed,".RData"))  # Till here everything is ok. 
 # return(ddsRepeatsResults)
 }
 
 
 #### run the function
+# metadata_df
+
 # ddsRepeatsResults <- Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = REF, ALT = ALT)
-Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = REF, ALT = ALT)
+# Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = REF, ALT = ALT)
 
-
+# MultiDE_comditions
+lapply(1:nrow(MultiDE_conditions), function(x) {Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = MultiDE_comditions[x,1], ALT = MultiDE_comditions[x,2])})
 # DeSeq2res1 <- edgeR::cpm(ddsRepeatsResults, log = TRUE, prior.count = 2) #prior.count = 2 is added to avoid log(0) error
+
+
+##########################################
+#### DE; full length L1
+##########################################
+mapSquireL1L1Base <- fread(path_map_locusL1_activeFullLen)
+dfRepL1 <- fread("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mapped_overlaps_repeatMasker_L1Base_mm10.tsv")
+# countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
+# countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
+
+# dfRepL1[, paste0("seqnames", "start", "end",  "rm_name")]
+dfRepL1[, idCol:=paste0("seqnames", "start", "end",  "rm_name", "rm_score", "strand")]
+dfRepL1 <- dfRepL1[, idCol:=paste0(seqnames, "|",start,"|" ,end, "|", rm_name, "|",rm_score, "|" ,strand)][,.SD, .SDcols = c("idCol","L1UID_name")]
+
+
+
+###### get active full length L1 and merge with repeatmasker
+#filter out repeats `counts_Sq_pCoding_df` 
+# merge l1 active and repeatmasker.
+# re-add merged l1 active and rm to `counts_Sq_pCoding_df`
+
+# copy(counts_Sq_pCoding_df)[str_detect(name, "L1"),][mapSquireL1L1Base, on = .(name=rm_name)]
+# mapSquireL1L1Base
+
+# counts_Sq_pCoding_df[name == "L1_Mus3:L1:LINE"]
+# dfRepL1[str_detect(idCol, "L1_Mus3:L1:LINE"),]
+
+# separate out L1
+validReadCountsRepeatsOnlyDT <- counts_Sq_pCoding_df[grepl("repeats", `gene.type`),]
+validReadCountsLociSpecL1RepeatsOnlyDT <- counts_Sq_pCoding_df[grepl("L1", name),]
+# sum(duplicated(validReadCountsLociSpecL1RepeatsOnlyDT$genomicElementID))
+# [dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
+
+validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnlyDT[dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
+
+#compute geometeric mean of read counts
+gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[, lapply(.SD, function(x){(as.integer(gm_mean(x)))}),by = L1UID_name, .SDcols = sampleNames]
+#sanity checks, is active l1 id duplicated?
+sum(duplicated(gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT$L1UID_name))
+
+####TO-DO
+# merge 1. protein coding, non LINE1, 3. geometeric mean of line1
+counts_Sq_pCoding_df[!grepl("protein_coding", `gene.type`),] #protein coding only  
+counts_Sq_pCoding_df[!grepl("protein_coding", `gene.type`) & !grepl("L1", name),] #not protein coding but some other repeats except L1  
+counts_Sq_pCoding_df[grepl("protein_coding", `gene.type`) & grepl("L1", `te.name`),] #is there L1 names in protein coding genes?  
+counts_Sq_pCoding_df[grepl("protein_coding", `gene.type`) & grepl("L1", genomicElementID),] #is there L1 names in protein coding genes?  
+
+# gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT
+
+ptCoding_allRepeats_exceptL1 <- rbind(counts_Sq_pCoding_df[!grepl("repeats", `gene.type`),], counts_Sq_pCoding_df[!grepl("protein_coding", `gene.type`) & !grepl("L1", name),])
+sum(duplicated(ptCoding_allRepeats_exceptL1$genomicElementID))
+sum(is.na(ptCoding_allRepeats_exceptL1$genomicElementID))
+
+###this is what i nede for the final table
+ptCoding_allRepeats_activeL1 <- rbind(ptCoding_allRepeats_exceptL1, gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT, fill=TRUE)
+sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID))
+
+ptCoding_allRepeats_activeL1[duplicated(ptCoding_allRepeats_activeL1$genomicElementID),]
+
+ptCoding_allRepeats_activeL1[is.na(`gene.type`), `gene.type` := "activeL1"] #for filtering
+ptCoding_allRepeats_activeL1[is.na(genomicElementID), genomicElementID := L1UID_name] #if use genomicElementID is na replace with L1UID for deseq rownmaes `genomicElementID` for rownames
+# ptCoding_allRepeats_activeL1[duplicated(ptCoding_allRepeats_activeL1$genomicElementID),] #
+
+
+sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID))
+sum(is.na(ptCoding_allRepeats_activeL1$genomicElementID))
+sum(!is.na(ptCoding_allRepeats_activeL1$L1UID_name))
+#sanity checks
+# ptCoding_allRepeats_activeL1[!is.na(genomicElementID),]
+
+# ptCoding_allRepeats_activeL1[is.na(`gene.type`), `gene.type` := "activeL1"] #for filtering
+# counts_Sq_pCoding_df[,genomicElementID:=(fcase(!is.na(te.name), te.name,
+                                                    # !is.na(gene.id), gene.id ) )]
+
+#merge locus specific l1 
+# validReadCountsRepeatsOnlyDT[!grepl("L1", name), .(idCol = genomicElementID, L1UID_name = NA),]
+#rbind(validReadCountsRepeatsOnlyDT[!grepl("L1", name), .(idCol = genomicElementID, L1UID_name = NA),], validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT,fill=TRUE)
+# validReadCountsRepeatsOnlyDT[grepl("L1", name),][dfRepL1,on = .(genomicElementID=idCol) ]
+
+# validReadCountsRepeatsOnlyDT[grepl("L1", name), .(idCol = genomicElementID, L1UID_name = NA),][dfRepL1,on = .(genomicElementID=idCol) ]
+
+
+# counts_Sq_pCoding_active_pre <- copy(counts_Sq_pCoding_df)[str_detect(name, "L1"),][dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
+# copy(counts_Sq_pCoding_df)[str_detect(name, "L1"),][dfRepL1[,c("seqnames", "start", "end", "rm_name", "L1UID_name")], on = .(chr=seqnames, start=start, end=end)]
+# counts_Sq_pCoding_active_pre[, lapply(.SD, function(x){as.integer(mean(x))}),by = L1UID_name, .SDcols = c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
+# counts_Sq_pCoding_active_pre[, lapply(.SD, function(x){(as.integer(mean(x)))}),by = L1UID_name, .SDcols = c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
+
+# counts_Sq_pCoding_active_pre[, lapply(.SD, function(x){(as.integer(gm_mean(x)))}),by = L1UID_name, .SDcols = c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
+
+# ceiling(2.9)
+
+
+
+
+
+activeL1DE <- function(data_in, metadata_in, REF, ALT){
+cond_collapsed <- paste0(c("condition",REF, ALT), collapse="_")
+#get metadata
+metadata_short <- metadata_in %>% filter(condition %in% c(REF, ALT))
+metadata_short <- metadata_short %>% mutate(condition = factor(condition, levels = c(REF, ALT))) #factor for DESeq2
+
+ddsInFunc <- DESeqDataSetFromMatrix(countData = data.matrix(data_in[,metadata_short$samples]),
+                              colData = metadata_short,
+                              design = ~ condition)
+
+rowData(ddsInFunc) <- data_in[, c("L1UID_name", "gene.type")]
+# rowData(ddsInFunc)
+#normalise repeats with non-repeats
+dds_main <- DESeq(ddsInFunc)
+### filter out repeats of interest
+# dds_activeL1 <- dds_main[str_detect(rownames(dds_main),"L1"),]
+return(dds_main)
+}
+
+colsDE <- c("genomicElementID", "gene.type", "L1UID_name",sampleNames) #use this for the final table
+ptCoding_allRepeats_activeL1_DF <- as.data.frame(ptCoding_allRepeats_activeL1[, ..colsDE])
+rownames(ptCoding_allRepeats_activeL1_DF) <- ptCoding_allRepeats_activeL1_DF$genomicElementID
+head(ptCoding_allRepeats_activeL1_DF)
+
+
+ddsActiveL1Main <- activeL1DE(data_in=ptCoding_allRepeats_activeL1_DF, metadata_in=metadata_df, REF=REF, ALT=ALT)
+# sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID))
+
+# dds_activeL1 <- ddsActiveL1Main[str_detect(rownames(dds_main),"L1"),]
+# dds_activeL1 <- ddsActiveL1Main[str_detect(rownames(dds_main),"L1"),]

@@ -28,6 +28,11 @@ newColumns <- c("L1UID_seqnames", "L1UID_start", "L1UID_end", "L1UID_name", "L1U
 
 data.table::setnames(df, old=oldColumns, new=newColumns)
 
+#save to use for full length L1
+df2Save <- df[, c("seqnames",    "start",      "end", "rm_name",  "strand", "L1UID_name",  "rm_score", "strand")]
+fwrite(df2Save, file="mapped_overlaps_repeatMasker_L1Base_mm10.tsv", sep="\t", col.names = TRUE)
+
+
 #data.table::setnames(df, old=c("V1","V2","V3","V4","V5","V6", "V7", "V8","V9", "V10","V11", "V12", "V13", "V14"), new=c("seqnames", "start", "end", "name", "color", "strand","score", "thickStart", "thickEnd", "itemRgb", "rmSeqname", "rmStart", "rmEnd", "rmName","rmcolor", "rmStrand"))
 head(df)
 gr <- dt2gr(df)

@@ -3,7 +3,7 @@
 #purpose: differential expression analysis of active full length L1 & locus specific L1
 #1: merge readcounts from l1 and protein coding genes: out_L1_and_proteinCoding_genes_readcounts.csv
 #2. use `out_L1_and_proteinCoding_genes_readcounts.csv` as input for active L1, locus specific L1
-
+# install.packages("svglite")
 
 library(data.table)
 library(DESeq2)
@@ -24,7 +24,7 @@ library(GenomicRanges)
 library(gUtils)
 library(janitor)
 library(fst)
-
+library(svglite)
 options("width"=200)
 #input options:
 ref_variable = "DMSO"
@@ -45,10 +45,10 @@ threads_fst(set_fst_threads)
 ##make ref and alt list to run a loop
 REF <- "DMSO"
 ALT <- "AZA"
-REF_LIST <- c("DMSO", "DMSO", "DMSO", "DMSO", "DMSO","DMSO", "DMSO")
-ALT_LIST <- c("AZA", "QSTAT", "CKi", "QSTAT", "QSTAT-CKi", "SETDB1i","SETDB1i-CKi")
+REF_LIST <- c("DMSO", "DMSO", "DMSO", "DMSO", "DMSO","DMSO", "DMSO", "QSTAT", "CKi","SETDB1i","CKi", "QSTAT-CKi", "QSTAT")
+ALT_LIST <- c("AZA", "QSTAT", "CKi", "QSTAT", "QSTAT-CKi", "SETDB1i","SETDB1i-CKi", "QSTAT-CKi", "QSTAT-CKi","SETDB1i-CKi","SETDB1i-CKi", "SETDB1i-CKi","SETDB1i")
 
-MultiDE_conditions <- data.frame(REF = REF_LIST,ALT = ALT_LIST)
+MultiDE_conditions <- data.frame(REF = REF_LIST, ALT = ALT_LIST)
 
 #read squire data
 counts_Sq_dt <- fread(squireCounts_path)
@@ -58,6 +58,10 @@ counts_annot_pCoding <-  counts_annot_pCoding %>% mutate_if(is.double, ~as.integ
 
 #read the metadata
 metadata_df <- read.csv(file = metadata_path, sep="," ,header = TRUE)
+
+#read overlaps data to get cordiantes of active full length L1
+ovlps_counts_Sq_dt <- fread(path_map_locusL1_activeFullLen, select = c("L1UID_seqnames", "L1UID_start", "L1UID_end", "L1UID_name", "L1UID_score", "L1UID_strand", "L1UID_thickStart", "L1UID_thickEnd", "L1UID_itemRgb", "rm_name", "rm_score"))
+
 
 #interger counts of repearts
 intsSquire <- counts_Sq_dt[, lapply(.SD, as.integer), .SDcols = !c("te.id", "te.name")]
@@ -111,17 +115,18 @@ rownames(counts_Sq_pCoding_df_df) <- counts_Sq_pCoding_df_df$genomicElementID
 ############################
 #volcano plots of line 1
 ##FUN
-plotEVolcano <- function(df_input, title_in){
+plotEVolcano <- function(df_input, title_in, subtitle_in, selectLab_in=NULL){
     volcano_ggplot <- EnhancedVolcano(df_input,
     lab = rownames(df_input),
+    selectLab = selectLab_in,
     x = 'log2FoldChange',
     y = 'padj',
     title = title_in,
-    subtitle = "Differential locus Specific L1 expression",
+    subtitle = subtitle_in,
     col=c('grey', 'grey', 'grey', 'blue'),
     ylab = bquote(~-Log[10]~ 'padjust'))
 }
-
+#subtitle_in="Differential locus Specific L1 expression"
 ##FUN
 makeCPM <- function(DeSeq2_res, prior_cnts=2, keyColName){
 #get expression matrix
@@ -224,7 +229,6 @@ gm_mean = function(x, na.rm=TRUE){
 ##########################################
 #### DE; function to run loop
 ##########################################
-counts_Sq_dt <- fread(path_map_locusL1_activeFullLen)
 
 
 Repeat_DE <- function(data_in, metadata_in, REF, ALT){
@@ -264,10 +268,10 @@ resultsRepeatsShrink <- lfcShrink(dds_Repeats, contrast = c("condition", REF, AL
 # resultsProteinCodingShrink <- lfcShrink(dds_pCoding, contrast = c("condition", REF, ALT), res=ddsProteinCodingResults, type = 'normal')
 
 message("making volcano plots")
-volL1Shrink <- plotEVolcano(resultsL1Shrink, title_in=cond_collapsed)
-volRepeatsShrink <- plotEVolcano(resultsRepeatsShrink, title_in=cond_collapsed)
-ggsave(volL1Shrink, filename = paste0("volcano_locusSpecificLINE1_",cond_collapsed,".png"))
-ggsave(volRepeatsShrink, filename = paste0("volcano_locusSpecificRepeats_",cond_collapsed,".png"))
+volL1Shrink <- plotEVolcano(resultsL1Shrink, title_in=cond_collapsed, subtitle_in="Differential Locus Specific L1 Expression")
+volRepeatsShrink <- plotEVolcano(resultsRepeatsShrink, title_in=cond_collapsed, subtitle_in="Differential Locus Specific Repeats Expression")
+ggsave(volL1Shrink, filename = paste0("volcano_locusSpecificLINE1_",cond_collapsed,".svg"))
+ggsave(volRepeatsShrink, filename = paste0("volcano_locusSpecificRepeats_",cond_collapsed,".svg"))
 # ggsave(plotEVolcano(resultsProteinCodingShrink, title_in=cond_collapsed), filename = "volcano_proteinCoding_",cond_collapsed,".png")
 
 #make CPM
@@ -290,15 +294,15 @@ save(results2SaveLspecL1, file=paste0("Differential_locusSpecific_L1ExpressionRe
 # ddsRepeatsResults <- Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = REF, ALT = ALT)
 # Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = REF, ALT = ALT)
 
-# MultiDE_comditions
-lapply(1:nrow(MultiDE_conditions), function(x) {Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = MultiDE_comditions[x,1], ALT = MultiDE_comditions[x,2])})
+# MultiDE_conditions
+lapply(1:nrow(MultiDE_conditions), function(x) {Repeat_DE(data_in = counts_Sq_pCoding_df_df, metadata_in = metadata_df, REF = MultiDE_conditions[x,1], ALT = MultiDE_conditions[x,2])})
 # DeSeq2res1 <- edgeR::cpm(ddsRepeatsResults, log = TRUE, prior.count = 2) #prior.count = 2 is added to avoid log(0) error
 
 
 ##########################################
 #### DE; full length L1
 ##########################################
-mapSquireL1L1Base <- fread(path_map_locusL1_activeFullLen)
+# mapSquireL1L1Base <- fread(path_map_locusL1_activeFullLen)
 dfRepL1 <- fread("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mapped_overlaps_repeatMasker_L1Base_mm10.tsv")
 # countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
 # countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
@@ -326,9 +330,22 @@ validReadCountsLociSpecL1RepeatsOnlyDT <- counts_Sq_pCoding_df[grepl("L1", name)
 # sum(duplicated(validReadCountsLociSpecL1RepeatsOnlyDT$genomicElementID))
 # [dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
 
+
 validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnlyDT[dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
 
-#compute geometeric mean of read counts
+#save a copy for review
+validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT_withCordinates <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[ovlps_counts_Sq_dt, on = .(L1UID_name), nomatch=0L]
+fwrite(validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT_withCordinates, file="validReadCountsLociSpecL1_overlapping_withFullLengthL1.tsv", sep="\t", col.names = TRUE)
+#################
+#plot #lsL1 per full length
+numberLsL1_perFullLengthDT <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[ , .N , by = L1UID_name]
+plotLS_number <- ggplot() + geom_bar(data = numberLsL1_perFullLengthDT, aes(x = N), fill = "blue") + theme_minimal() + labs(title = "number of locus specific L1 per full length L1", x = "Active Full Length L1", y = "Frequency of locus specific L1")
+ggsave(plotLS_number, filename = "plot_number_LocusSpecL1_perFulllength.svg")
+
+
+
+
+#compute geometeric mean of read counts to combine multiple L1 that overlaps full length L1
 gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[, lapply(.SD, function(x){(as.integer(gm_mean(x)))}),by = L1UID_name, .SDcols = sampleNames]
 #sanity checks, is active l1 id duplicated?
 sum(duplicated(gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT$L1UID_name))
@@ -356,10 +373,16 @@ ptCoding_allRepeats_activeL1[is.na(`gene.type`), `gene.type` := "activeL1"] #for
 ptCoding_allRepeats_activeL1[is.na(genomicElementID), genomicElementID := L1UID_name] #if use genomicElementID is na replace with L1UID for deseq rownmaes `genomicElementID` for rownames
 # ptCoding_allRepeats_activeL1[duplicated(ptCoding_allRepeats_activeL1$genomicElementID),] #
 
-
 sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID))
 sum(is.na(ptCoding_allRepeats_activeL1$genomicElementID))
 sum(!is.na(ptCoding_allRepeats_activeL1$L1UID_name))
+
+###prepare data for active line 1 DE run
+colsDE <- c("genomicElementID", "gene.type", "L1UID_name",sampleNames) #use this for the final table
+ptCoding_allRepeats_activeL1_DF <- as.data.frame(ptCoding_allRepeats_activeL1[, ..colsDE])
+rownames(ptCoding_allRepeats_activeL1_DF) <- ptCoding_allRepeats_activeL1_DF$genomicElementID
+# head(ptCoding_allRepeats_activeL1_DF)
+
 #sanity checks
 # ptCoding_allRepeats_activeL1[!is.na(genomicElementID),]
 
@@ -382,11 +405,6 @@ sum(!is.na(ptCoding_allRepeats_activeL1$L1UID_name))
 
 # counts_Sq_pCoding_active_pre[, lapply(.SD, function(x){(as.integer(gm_mean(x)))}),by = L1UID_name, .SDcols = c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
 
-# ceiling(2.9)
-
-
-
-
 
 activeL1DE <- function(data_in, metadata_in, REF, ALT){
 cond_collapsed <- paste0(c("condition",REF, ALT), collapse="_")
@@ -403,18 +421,127 @@ rowData(ddsInFunc) <- data_in[, c("L1UID_name", "gene.type")]
 #normalise repeats with non-repeats
 dds_main <- DESeq(ddsInFunc)
 ### filter out repeats of interest
-# dds_activeL1 <- dds_main[str_detect(rownames(dds_main),"L1"),]
-return(dds_main)
+
+dds_activeL1 <- dds_main[str_detect(rownames(dds_main),"UID-"),]
+resActiveL1 <- results(dds_activeL1)
+resActiveL1Df <- as.data.frame(resActiveL1)
+
+message("summary of active L1 DE results")
+message(summary(resActiveL1))
+message("/n")
+
+# shrink results for volcano
+resultsActiveL1Shrink <- lfcShrink(dds_activeL1, contrast = c("condition", REF, ALT), res=resActiveL1, type = 'normal')
+
+message("making volcano plots")
+volActiveL1Shrink <- plotEVolcano(resultsActiveL1Shrink, title_in=cond_collapsed, subtitle_in="Differential Active L1 Expression")
+ggsave(volActiveL1Shrink, filename = paste0("volcano_ActiveLINE1_",cond_collapsed,".svg"))
+
+# make CPM
+message("making CPM")
+ActiveL1_cpm_df <- makeCPM(DeSeq2_res=dds_activeL1, prior_cnts=2, keyColName="genomicElementID")
+
+#save results
+message("saving results to disk")
+results2SaveActiveL1 <- list(ddsMain=dds_main, ddsFiltered=resActiveL1, resDF=resActiveL1Df, resShrinkedDF=resultsActiveL1Shrink, cpmDF=ActiveL1_cpm_df, volcano_ggplot = volActiveL1Shrink)
+save(results2SaveActiveL1, file=paste0("Differential_ActiveL1ExpressionResults_",cond_collapsed,".RData"))  # Till here everything is ok. 
 }
 
-colsDE <- c("genomicElementID", "gene.type", "L1UID_name",sampleNames) #use this for the final table
-ptCoding_allRepeats_activeL1_DF <- as.data.frame(ptCoding_allRepeats_activeL1[, ..colsDE])
-rownames(ptCoding_allRepeats_activeL1_DF) <- ptCoding_allRepeats_activeL1_DF$genomicElementID
-head(ptCoding_allRepeats_activeL1_DF)
 
 
-ddsActiveL1Main <- activeL1DE(data_in=ptCoding_allRepeats_activeL1_DF, metadata_in=metadata_df, REF=REF, ALT=ALT)
+# tstrsplit("chr1|100|200|L1|1|+", "|", fixed = TRUE)[4]
+# tstrsplit(head(counts_Sq_pCoding_df$genomicElementID, 10), "|", fixed = TRUE)[4][[1]]
+
+# counts_Sq_pCoding_df$genomicElementID[grepl("L1", counts_Sq_pCoding_df$genomicElementID)]
+
+lapply(1:nrow(MultiDE_conditions), function(x) {activeL1DE(data_in = ptCoding_allRepeats_activeL1_DF, metadata_in = metadata_df, REF = MultiDE_conditions[x,1], ALT = MultiDE_conditions[x,2])})
+
+
+###############################
+##### detiled 
+##############################
+#how many full lenghts have >1 locus-specific l1 mapping
+numberLsL1_perFullLengthDT[N > 1,] 
+#
+ptCoding_allRepeats_activeL1_DF[str_detect(rownames(ptCoding_allRepeats_activeL1_DF),"UID-"),]
+
+multipleLocusSpecReadsDT <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[L1UID_name %in% numberLsL1_perFullLengthDT[N > 1, L1UID_name],]
+multipleLocusSpecReadsList <- split(multipleLocusSpecReadsDT[,..colsDE ], multipleLocusSpecReadsDT$L1UID_name)
+
+multipleLocusSpecReadsDT_long <- melt(multipleLocusSpecReadsDT, id.vars = c("genomicElementID", "L1UID_name", "gene.type"), measure.vars = sampleNames, variable.name = "samples", value.name = "readCounts")
+multipleLocusSpecReadsDT_longCnds <- multipleLocusSpecReadsDT_long[metadata_df, on=.(samples), nomatch=0L]
+setnames(multipleLocusSpecReadsDT_longCnds, "genomicElementID", "ID")
+
+
+
+multipleLocusSpecReadsDT_longCndsLs <- split(multipleLocusSpecReadsDT_longCnds, multipleLocusSpecReadsDT_longCnds$L1UID_name)
+plot_readCounts <- ggplot(data = multipleLocusSpecReadsDT_longCndsLs[['UID-828']], aes(x=samples, y=readCounts)) + geom_point(aes(color=ID)) + facet_wrap(~condition, scales = "free")  + theme_minimal() + theme(legend.position = "bottom")+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_color_discrete(labels = function(x) stringr::str_wrap(x, width = 20))
+ggsave(plot_readCounts, filename = "readCounts_activeL1.svg")
+
+# 
+plot_multipleReadCounts <- function(namesList){
+  plot_readCounts <- ggplot(data = multipleLocusSpecReadsDT_longCndsLs[[namesList]], aes(x=samples, y=readCounts)) + geom_point(aes(color=ID)) + facet_wrap(~condition, scales = "free")  + theme_minimal() + theme(legend.position = "bottom")+labs(title = namesList) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_color_discrete(labels = function(x) stringr::str_wrap(x, width = 20))
+return(plot_readCounts)
+}
+
+
+pdf("readCounts_activeL1_list.pdf")
+lapply(names(multipleLocusSpecReadsDT_longCndsLs), function(x) {plot_multipleReadCounts(x)})
+dev.off()
+
+
+
+#######################################################
+#### get and plot stats
+############################################################
+# multipleLocusSpecReadsDT_longCndsLs[["UID-181"]][,.(readCounts_mean = mean(readCounts), readCounts_var = var(readCounts), readCounts_geomMean=gm_mean(readCounts), readCounts_SD=sd(readCounts) ), by=samples]
+
+multipleLocusSpecReadsDT_stats_longCndsLs <- lapply(multipleLocusSpecReadsDT_longCndsLs, function(x){
+  x[,.(readCounts_mean = mean(readCounts), readCounts_var = var(readCounts), readCounts_geomMean=gm_mean(readCounts), readCounts_SD=sd(readCounts) ), by=samples][metadata_df, on=.(samples), nomatch=0L]
+})
+
+plot_StatsMultipleReadCounts <- function(namesList){
+  plot_readCountsStats <- ggplot(data = multipleLocusSpecReadsDT_stats_longCndsLs[[namesList]], aes(x=readCounts_mean, y=readCounts_SD)) + geom_point(aes(color=samples)) + facet_wrap(~condition, scales = "free")  + theme_minimal() + theme(legend.position = "bottom")+ 
+  labs(title = namesList) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  scale_color_discrete(labels = function(x) stringr::str_wrap(x, width = 20))
+return(plot_readCountsStats)
+}
+
+pdf("stats_readCounts_activeL1_list.pdf")
+lapply(names(multipleLocusSpecReadsDT_stats_longCndsLs), function(x) {plot_StatsMultipleReadCounts(x)})
+dev.off()
+
+
+# multipleLocusSpecReadsDT_longCndsLs[["UID-181"]][,.(readCounts_mean = mean(readCounts), readCounts_var = var(readCounts), readCounts_geomMean=gm_mean(readCounts), readCounts_SD=sd(readCounts) ), by=samples]
+
+
+
+# ddsActiveL1Main <- activeL1DE(data_in=ptCoding_allRepeats_activeL1_DF, metadata_in=metadata_df, REF=REF, ALT=ALT)
 # sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID))
 
-# dds_activeL1 <- ddsActiveL1Main[str_detect(rownames(dds_main),"L1"),]
-# dds_activeL1 <- ddsActiveL1Main[str_detect(rownames(dds_main),"L1"),]
+# dds_activeL1 <- ddsActiveL1Main[str_detect(rownames(ddsActiveL1Main),"UID-"),]
+# resActiveL1 <- results(dds_activeL1)
+# resActiveL1Df <- as.data.frame(resActiveL1)
+
+# ptCoding_allRepeats_activeL1[!is.na(L1UID_name), c("R.0.1", "L1UID_name")]
+# resActiveL1$rowname <- rownames(resActiveL1)
+# merge(resActiveL1, ptCoding_allRepeats_activeL1[!is.na(L1UID_name), c("R.0.1", "L1UID_name")], by.x = "rowname", by.y = "L1UID_name")
+
+# message("summary of active L1 DE results")
+# message(summary(resActiveL1))
+# message("/n")
+
+#shrink results for volcano
+# resultsActiveL1Shrink <- lfcShrink(dds_activeL1, contrast = c("condition", REF, ALT), res=resActiveL1, type = 'normal')
+
+# message("making volcano plots")
+# volActiveL1Shrink <- plotEVolcano(resultsActiveL1Shrink, title_in=cond_collapsed)
+# ggsave(volActiveL1Shrink, filename = paste0("volcano_ActiveLINE1_",cond_collapsed,".png"))
+
+#make CPM
+# message("making CPM")
+# ActiveL1_cpm_df <- makeCPM(DeSeq2_res=dds_activeL1, prior_cnts=2, keyColName="genomicElementID")
+
+# #save results
+# message("saving results to disk")
+# results2SaveActiveL1 <- list(ddsMain=ddsActiveL1Main, ddsFiltered=resActiveL1, resDF=resActiveL1Df, resShrinkedDF=resultsActiveL1Shrink, cpmDF=ActiveL1_cpm_df, volcano_ggplot = volActiveL1Shrink)

@@ -10,3 +10,4 @@ database
 *.fst
 outputs/
 scripts/*.bed
+

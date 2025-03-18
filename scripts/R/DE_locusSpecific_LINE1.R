@@ -42,6 +42,7 @@ RefAlt_samples <- c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")
 DE_conditions <- data.frame(condition = c("DMSO;AZA", "DMSO;CKi", "DMSO;QSTAT", "DMSO;QSTAT-CKi"))
 threads_fst(set_fst_threads)
 
+methodComputeMultipleLocusSpecL1ReadCounts = "max"
 ##make ref and alt list to run a loop
 REF <- "DMSO"
 ALT <- "AZA"
@@ -115,10 +116,14 @@ rownames(counts_Sq_pCoding_df_df) <- counts_Sq_pCoding_df_df$genomicElementID
 ############################
 #volcano plots of line 1
 ##FUN
-plotEVolcano <- function(df_input, title_in, subtitle_in, selectLab_in=NULL){
+plotEVolcano <- function(df_input, title_in, subtitle_in, selectLab_in=NULL, labs=NULL){
+    if(is.null(labs)){
+      labs = rownames(df_input)
+    }
     volcano_ggplot <- EnhancedVolcano(df_input,
-    lab = rownames(df_input),
-    selectLab = selectLab_in,
+    #lab = rownames(df_input),
+    lab = labs,
+    #selectLab = selectLab_in,
     x = 'log2FoldChange',
     y = 'padj',
     title = title_in,
@@ -229,8 +234,6 @@ gm_mean = function(x, na.rm=TRUE){
 ##########################################
 #### DE; function to run loop
 ##########################################
-
-
 Repeat_DE <- function(data_in, metadata_in, REF, ALT){
 cond_collapsed <- paste0(c("condition",REF, ALT), collapse="_")
 #get metadata
@@ -304,12 +307,16 @@ lapply(1:nrow(MultiDE_conditions), function(x) {Repeat_DE(data_in = counts_Sq_pC
 ##########################################
 # mapSquireL1L1Base <- fread(path_map_locusL1_activeFullLen)
 dfRepL1 <- fread("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mapped_overlaps_repeatMasker_L1Base_mm10.tsv")
+dfRepL1[L1UID_name == "UID-828"]
+dfRepL1[L1UID_name == "UID-827"] 
 # countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
 # countsSepNameCols <- counts_Sq_pCoding_df_df %>% separate_wider_delim(te.name, "|" , names = c("chrom", "start", "end", "name","number","strand")) %>% separate_wider_delim(name, ":" ,names = c("consensus","clade", "class"))
 
 # dfRepL1[, paste0("seqnames", "start", "end",  "rm_name")]
 dfRepL1[, idCol:=paste0("seqnames", "start", "end",  "rm_name", "rm_score", "strand")]
 dfRepL1 <- dfRepL1[, idCol:=paste0(seqnames, "|",start,"|" ,end, "|", rm_name, "|",rm_score, "|" ,strand)][,.SD, .SDcols = c("idCol","L1UID_name")]
+
+dfRepL1[idCol == "chr15|55677600|55684869|L1Md_T:L1:LINE|30|-", ]
 
 
 
@@ -325,11 +332,11 @@ dfRepL1 <- dfRepL1[, idCol:=paste0(seqnames, "|",start,"|" ,end, "|", rm_name, "
 # dfRepL1[str_detect(idCol, "L1_Mus3:L1:LINE"),]
 
 # separate out L1
-validReadCountsRepeatsOnlyDT <- counts_Sq_pCoding_df[grepl("repeats", `gene.type`),]
+validReadCountsRepeatsOnlyDT <- counts_Sq_pCoding_df[grepl("repeats", `gene.type`), ]
 validReadCountsLociSpecL1RepeatsOnlyDT <- counts_Sq_pCoding_df[grepl("L1", name),]
 # sum(duplicated(validReadCountsLociSpecL1RepeatsOnlyDT$genomicElementID))
 # [dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
-
+validReadCountsRepeatsOnlyDT[genomicElementID == "chr15|55677600|55684869|L1Md_T:L1:LINE|30|-", ]
 
 validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnlyDT[dfRepL1, on = .(`te.name`=`idCol`), nomatch=0L]
 
@@ -343,10 +350,21 @@ plotLS_number <- ggplot() + geom_bar(data = numberLsL1_perFullLengthDT, aes(x = 
 ggsave(plotLS_number, filename = "plot_number_LocusSpecL1_perFulllength.svg")
 
 
+#duplicate: chr15|55677600|55684869|L1Md_T:L1:LINE|30|-
+##add width  of TE
+validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[, L1width := (end - start) + 1]
+validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[, idx := .I]
+validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[, isMaxWidth:=(L1width == max(L1width)), by = L1UID_name]
 
+if(methodComputeMultipleLocusSpecL1ReadCounts == "max") {
+# To get other columns corresponding to these maximum rows, join back to the original data.table:
+gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[isMaxWidth == TRUE,]
 
-#compute geometeric mean of read counts to combine multiple L1 that overlaps full length L1
+} else if (methodComputeMultipleLocusSpecL1ReadCounts == "geometericMean") {
+   #compute geometeric mean of read counts to combine multiple L1 that overlaps full length L1
 gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT <- validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[, lapply(.SD, function(x){(as.integer(gm_mean(x)))}),by = L1UID_name, .SDcols = sampleNames]
+}
+
 #sanity checks, is active l1 id duplicated?
 sum(duplicated(gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT$L1UID_name))
 
@@ -359,17 +377,33 @@ counts_Sq_pCoding_df[grepl("protein_coding", `gene.type`) & grepl("L1", genomicE
 
 # gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT
 
-ptCoding_allRepeats_exceptL1 <- rbind(counts_Sq_pCoding_df[!grepl("repeats", `gene.type`),], counts_Sq_pCoding_df[!grepl("protein_coding", `gene.type`) & !grepl("L1", name),])
+ptCoding_allRepeats_exceptL1 <- rbind(counts_Sq_pCoding_df[!grepl("repeats", `gene.type`), ], counts_Sq_pCoding_df[!grepl("protein_coding", `gene.type`) & !grepl("L1", name),])
 sum(duplicated(ptCoding_allRepeats_exceptL1$genomicElementID))
 sum(is.na(ptCoding_allRepeats_exceptL1$genomicElementID))
 
-###this is what i nede for the final table
+###this is what i needed for the final table;
 ptCoding_allRepeats_activeL1 <- rbind(ptCoding_allRepeats_exceptL1, gmMean_validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT, fill=TRUE)
-sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID))
+sum(duplicated(ptCoding_allRepeats_activeL1$genomicElementID) == TRUE)
 
+idxDuplicatedRows <- which(duplicated(ptCoding_allRepeats_activeL1$genomicElementID)==TRUE)
+idDuplicatedRows <- ptCoding_allRepeats_activeL1[idxDuplicatedRows, genomicElementID]
+ptCoding_allRepeats_activeL1[genomicElementID %in% idDuplicatedRows, ]
+
+validReadCountsLociSpecL1RepeatsOnly_withL1BaseID_DT[genomicElementID %in% idDuplicatedRows,]
+
+# make unique genomicElementID for DESeq2 rownames
+ptCoding_allRepeats_activeL1[, genomicElementID := make.unique(genomicElementID)]
+# ptCoding_allRepeats_activeL1[, genomicElementIDUnique := make.unique(genomicElementID)]
+message("below are the same RepmaskerL1 that maps to full Length L1")
+ptCoding_allRepeats_activeL1[genomicElementID %in% idDuplicatedRows,]
+
+#get actual rows with duplicated id
 ptCoding_allRepeats_activeL1[duplicated(ptCoding_allRepeats_activeL1$genomicElementID),]
 
+# sum(is.na(ptCoding_allRepeats_activeL1$genomicElementID))
+
 ptCoding_allRepeats_activeL1[is.na(`gene.type`), `gene.type` := "activeL1"] #for filtering
+sum(is.na(ptCoding_allRepeats_activeL1$`gene.type`))
 ptCoding_allRepeats_activeL1[is.na(genomicElementID), genomicElementID := L1UID_name] #if use genomicElementID is na replace with L1UID for deseq rownmaes `genomicElementID` for rownames
 # ptCoding_allRepeats_activeL1[duplicated(ptCoding_allRepeats_activeL1$genomicElementID),] #
 
@@ -383,6 +417,7 @@ ptCoding_allRepeats_activeL1_DF <- as.data.frame(ptCoding_allRepeats_activeL1[, 
 rownames(ptCoding_allRepeats_activeL1_DF) <- ptCoding_allRepeats_activeL1_DF$genomicElementID
 # head(ptCoding_allRepeats_activeL1_DF)
 
+sum(str_detect(ptCoding_allRepeats_activeL1_DF$genomicElementID,"UID-"))
 #sanity checks
 # ptCoding_allRepeats_activeL1[!is.na(genomicElementID),]
 
@@ -405,23 +440,32 @@ rownames(ptCoding_allRepeats_activeL1_DF) <- ptCoding_allRepeats_activeL1_DF$gen
 
 # counts_Sq_pCoding_active_pre[, lapply(.SD, function(x){(as.integer(gm_mean(x)))}),by = L1UID_name, .SDcols = c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
 
+# "R.0.1 R.0.2 R.0.3 R.A.1 R.A.2 R.A.3"
+# dtDeseq <- ptCoding_allRepeats_activeL1_DF[, c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
+# data_in <- ptCoding_allRepeats_activeL1_DF[, c("R.0.1", "R.0.2", "R.0.3", "R.A.1", "R.A.2", "R.A.3")]
+# any(is.na(dtDeseq))
 
 activeL1DE <- function(data_in, metadata_in, REF, ALT){
-cond_collapsed <- paste0(c("condition",REF, ALT), collapse="_")
+cond_collapsed <- paste0(c("condition", REF, ALT), collapse="_")
 #get metadata
 metadata_short <- metadata_in %>% filter(condition %in% c(REF, ALT))
 metadata_short <- metadata_short %>% mutate(condition = factor(condition, levels = c(REF, ALT))) #factor for DESeq2
 
+message("making DESeq2 object")
 ddsInFunc <- DESeqDataSetFromMatrix(countData = data.matrix(data_in[,metadata_short$samples]),
                               colData = metadata_short,
                               design = ~ condition)
 
 rowData(ddsInFunc) <- data_in[, c("L1UID_name", "gene.type")]
-# rowData(ddsInFunc)
-#normalise repeats with non-repeats
+
+message("checking for NAs")
+message(any(is.na(counts(ddsInFunc))))
+
+message("normalise repeats with non-repeats")
 dds_main <- DESeq(ddsInFunc)
 ### filter out repeats of interest
 
+message("filter out repeats of interest")
 dds_activeL1 <- dds_main[str_detect(rownames(dds_main),"UID-"),]
 resActiveL1 <- results(dds_activeL1)
 resActiveL1Df <- as.data.frame(resActiveL1)

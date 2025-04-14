@@ -6,7 +6,12 @@ purpose: DNAme of reference line 1
 Workflows:
 
 ```
-sh /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/run.sh
+snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/fullLengthL1_L1Base_DNAmeOverlaps.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurm --jobs unlimited --cores all --use-conda -np
+
+```
+
+```
+sh /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/dDNAme_Ref_LINE1/run.sh
 ```
 
 # run on slurm cluster

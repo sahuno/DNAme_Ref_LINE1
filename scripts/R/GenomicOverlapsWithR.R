@@ -19,15 +19,18 @@ option_list <- list(
         help="Print extra output [default]"),
     make_option(c("-q", "--quietly"), action="store_false", 
         dest="verbose", help="Print little output"),
-    make_option(c("-l", "--L1ref"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.400_600bp5UTR_sorted.bed", 
-        help="cordinates of reference line1 with promoters [default %default]"),
+    make_option(c("-l", "--L1ref"), type="character", 
+        help="cordinates of reference line1 with promoters"),
     make_option(c("-p", "--promoterType"), type="character", default="400_600bpPromoter", 
         help="wholeLengthPromoter, 100bpPromoter or 400_600bpPromoter [default %default]"),
-        make_option(c("-b", "--bedfiles"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/DNAme_bed/version2/results/prepareBedFiles/nonCpGIslands/", 
-        help="path to bed files [default %default]"),
+        make_option(c("-b", "--bedfiles"), type="character", 
+        help="path to bed files"),
         make_option(c("-s", "--suffixBed"), type="character", default="_minCov10.bed", 
         help="suffix of methylation bed files [default %default]")
     )
+
+#    make_option(c("-l", "--L1ref"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.400_600bp5UTR_sorted.bed", 
+#    make_option(c("-b", "--bedfiles"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/DNAme_bed/version2/results/prepareBedFiles/nonCpGIslands/", 
 
 # 
 opt <- parse_args(OptionParser(option_list=option_list))

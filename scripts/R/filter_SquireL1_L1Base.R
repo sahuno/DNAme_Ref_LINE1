@@ -10,10 +10,32 @@ library(data.table)
 #genomics utils package from marcin imel.
 library(gUtils)
 
+library(optparse)
+
+# Define options
+option_list <- list(
+  make_option(c("-f", "--path_file"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/clean_analysis03202025/overlapsSquireL1.bed",
+              help="Path to input file [default %default]", metavar="FILE"),
+  make_option(c("-a", "--analysis_key"), type="character", default="mm10_mmflil1_8438",
+              help="Analysis key identifier [default %default]", metavar="KEY")
+)
+
+dirName <- "filterSquireL1_L1Base"
+# Parse options
+parser <- OptionParser(option_list=option_list)
+opt <- parse_args(parser)
+
+# Accessing options
+path_file <- opt$path_file
+analysis_key <- opt$analysis_key
+
+
 #options
-path_file <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/overlapsSquireL1.bed"
+# path_file <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/overlapsSquireL1.bed"
+# analysis_key = "mm10_mmflil1_8438" #change
+
 bedfile_names <- c("seqnames",    "start",      "end", "rm_name", "rm_score", "strand", "start", "end", "L1UID_itemRgb")
-analysis_key = "mm10_mmflil1_8438" #change
+
 
 
 df <- fread(path_file)
@@ -38,16 +60,16 @@ head(df)
 gr <- dt2gr(df)
 mcols(gr)$width_rmL1 <- width(gr)
 
-
+dir.create(dirName, recursive = FALSE)
 #### randomly sample, write to bed to visualize in IGV
 dt_2save <- gr2dt(gr)
 dtUID100 <- dt_2save[L1UID_name == "UID-100", ..bedfile_names]
 dtUID2 <- dt_2save[L1UID_name == "UID-2", ..bedfile_names]
 dtUID2500 <- dt_2save[L1UID_name == "UID-2500", ..bedfile_names]
 
-fwrite(dtUID100, file="mapped_repeatMasker_L1Base_UID100_mm10.bed", sep="\t", col.names = FALSE)
-fwrite(dtUID2, file="mapped_repeatMasker_L1Base_UID2_mm10.bed", sep="\t",col.names = FALSE)
-fwrite(dtUID2500, file="mapped_repeatMasker_L1Base_UID2500_mm10.bed", sep="\t", col.names = FALSE)
+fwrite(dtUID100, file=paste0(dirName,"/mapped_repeatMasker_L1Base_UID100_mm10.bed"), sep="\t", col.names = FALSE)
+fwrite(dtUID2, file=paste0(dirName,"/mapped_repeatMasker_L1Base_UID2_mm10.bed"), sep="\t",col.names = FALSE)
+fwrite(dtUID2500, file=paste0(dirName,"/mapped_repeatMasker_L1Base_UID2500_mm10.bed"), sep="\t", col.names = FALSE)
 
 # chr1_148378685_148384680_UID100
 # chr1_5816878_5827110_UID2_mm10
@@ -80,8 +102,8 @@ grl_dt <- rbindlist(grl_dtl)
 
 message("writing data to disk")
 newBedColumnNames <- c(bedfile_names, "width_rmL1", "L1UID_name", "L1UID_strand")
-fwrite(grl_dt, file="mapped_repeatMasker_L1Base.tsv", sep="\t")
-fwrite(grl_dt[,..newBedColumnNames], file=paste0("mapped_repeatMasker_AssignedTo_L1Base_",analysis_key,".tsv"), sep="\t") #for filtering purposes 
+fwrite(grl_dt, file=paste0(dirName,"/mapped_repeatMasker_L1Base.tsv"), sep="\t")
+fwrite(grl_dt[,..newBedColumnNames], file=paste0(dirName,"/mapped_repeatMasker_AssignedTo_L1Base_",analysis_key,".tsv"), sep="\t") #for filtering purposes 
 
 
 # analysis_key

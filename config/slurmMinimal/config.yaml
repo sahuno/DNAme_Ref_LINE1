@@ -1,0 +1,29 @@
+default-resources:
+    slurm_partition: "cpushort"
+    slurm_account: "greenbab"
+    runtime: 10 # 2hrs
+    mem_mb_per_cpu: 12000
+    cpus_per_task: 4
+    nodes: 1
+executor: slurm
+
+# cluster-config:
+#   memory_constraint: "--mem={resources.mem_mb}"
+keep-incomplete: True
+# --singularity-args: "\"--bind /data1/greenbab\""
+use-conda: True
+jobs: 10
+keep-going: True
+rerun-incomplete: True
+# restart-times: 2
+printshellcmds: True
+# shadow-prefix: /scratch/ntpierce
+latency-wait: 360
+# forceall: True
+#cmd options
+#https://snakemake.readthedocs.io/en/stable/executing/cli.html
+#https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html
+
+
+    # mem_mb_per_cpu: 64000 #16GB
+    # mem_mb_per_cpu: 16384 #16GB #low

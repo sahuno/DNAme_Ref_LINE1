@@ -1,9 +1,10 @@
 parent_dir = "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/"
 configfile: parent_dir + "config/config.yaml"
-configfile: parent_dir + "config/samples_5mC_bed.yaml" #mouse samples
+configfile: parent_dir + "config/samples_5mC_bed_finalSet.yaml" #mouse samples all treatments
 # configfile: parent_dir + "config/samples_bed.yaml" #mouse samples
+#samples_5mC_bed_finalSet.yaml
 
-minCoverages = [5, 10, 15, 20]
+minCoverages = [0, 5, 10, 15, 20]
 
 
 #to Run: 

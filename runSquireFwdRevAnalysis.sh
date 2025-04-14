@@ -1,0 +1,25 @@
+# run fwd and reverse Squie analysis
+#1. generate count matrix for Repeats RNA
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/mergeSquire_RNA.R
+
+#2. Generate DNAme for 
+define promoter motifs for LINE1
+./data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/Define_RepeatPromoters.sh
+
+
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R
+mkdir -p RepeatsDNAmeStats
+snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/RepeatsDNAme_QC.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurmMinimal --jobs unlimited --cores all --use-conda -np
+
+# /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R
+
+
+#3. merge repeats DNAme table
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/mergeRepeatsDNAmeTable.R
+
+
+#4. Run locus-specific DE analysis
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_locusSpecificLINE1.R
+
+#5. HeatMaps for DE analysis
+/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R

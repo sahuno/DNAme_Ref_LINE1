@@ -62,3 +62,9 @@ fwrite(repeatStatsDT_plusMeta, sep="\t", file = paste0("RepeatsDNAmeStatsAllSamp
 # unique(metaData)[TE_ID=="chr1|3014751|3021011|L1Md_F2:L1:LINE|84|-",]
 
 # grep -E "chr1|3014751|3021011|L1Md_F2:L1:LINE|84|-" /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/RepeatsDNAmeStats/D-0-3_4000_repeatsDNAme.tsv | less
+
+# library(fst)
+# rdt <- read_fst("SQuireLINEsValidReadCounts_Aggregated_FWD_REV.fst", to =10)
+# dt1 <- read_fst("squireRepeats_AggregatedFWDnREV_masterTable.fst", to =10, columns=c("TE_ID", "tot_counts", "fpkm", "validReadCounts", "sample"))
+
+# cols <- c("TE_ID", "tot_counts", "fpkm", "validReadCounts", "sample")

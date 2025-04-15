@@ -6,10 +6,15 @@ Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_
 define promoter motifs for LINE1
 ./data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/Define_RepeatPromoters.sh
 
+## generate DNAme stats
+/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/locSpecDNAme_overlaps.R
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R
-mkdir -p RepeatsDNAmeStats
-snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/RepeatsDNAme_QC.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurmMinimal --jobs unlimited --cores all --use-conda -np
+# mkdir -p RepeatsDNAmeStats
+snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/RepeatsPromotersStats.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurmMinimal --jobs unlimited --cores all --use-conda -np
+
+# rm -r .snakemake logs results
+
 
 # /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R
 

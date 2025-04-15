@@ -19,13 +19,18 @@ rule repeatsDNAme:
     output:
         "results/{sample}_DNAme_output.txt"
     log: "logs/{sample}_log.txt"
+    params:
+        RepeatRegions="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/SQuireRepeatsValidnNonValidReadCounts_Aggregated_FWD_REV.fst",
+        scriptR="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R"
     shell:
         """
-        ~/miniforge3/envs/r-env/bin/Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R \
+        ~/miniforge3/envs/r-env/bin/Rscript {params.scriptR} \
         --RepeatRegions "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/SQuireRepeatsValidnNonValidReadCounts_Aggregated_FWD_REV.fst" \
         --FileDNAme "{input:q}" \
         --sampleName "{wildcards.sample:q}" 2> {log} && touch {output}
         """
+
+#scriptR="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidnNonValidReadCounts.R"
 
 
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/DNAme_of_SquireRepeatsWithValidReadCounts.R \
@@ -34,3 +39,7 @@ rule repeatsDNAme:
 # --sampleName "D-A-3_4000" && touch results/D-A-3_4000_DNAme_output.txt
 #    conda:
 #        "r-env"
+
+
+# RepeatRegions="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/SQuireRepeatsValidReadCounts_Aggregated_FWD_REV.fst"
+# RepeatRegions="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/SQuireRepeatsValidnNonValidReadCounts_Aggregated_FWD_REV.fst",

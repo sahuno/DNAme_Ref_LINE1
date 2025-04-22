@@ -178,9 +178,10 @@ counts_Sq_pCoding_df <- counts_Sq_ints_dt %>% relocate(all_of(sampleNames), .aft
 #need this for full length L1
 fwrite(counts_Sq_pCoding_df, file = paste0("LocusSpecific/data/CountMatrix_squireRepeats_AggregatedFWDnREV_ProteinCoding.bed"), sep="\t", col.names = TRUE)
 
-##########################################
-#### DE; all locus specific repeats
-##########################################
+##################################################################
+############ DE; all locus specific repeats. ################
+##################################################################
+
 #step 1: convert to dataframe
 #step 2: metadata
 #step 3: DE analysis
@@ -244,9 +245,9 @@ gm_mean = function(x, na.rm=TRUE){
 
 
 
-##########################################
-#### DE; function to run loop
-##########################################
+##################################################
+#### DE; function to run loop ####################
+##################################################
 Repeat_DE <- function(data_in, metadata_in, REF, ALT){
 cond_collapsed <- paste0(c("condition",ALT,REF), collapse="_")
 #get metadata

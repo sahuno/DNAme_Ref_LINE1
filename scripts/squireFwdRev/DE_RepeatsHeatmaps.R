@@ -1,7 +1,7 @@
 #
 # merge DNA methylation rates with RNAseq counts
 # mkdir -p DNAme_RNA_rln
-# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/R/mergeDNAme_and_RNASeq.R
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R
 
 
 library(data.table)
@@ -40,7 +40,7 @@ options("width"=200)
 
 option_list <- list(
     make_option(c("-l", "--lfcCutoff"), type="numeric", default=0.5, help="Cutoff for adjusted p-value [default %default]"),
-    make_option(c("-d", "--paths_rdata"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/LocusSpecific",help="Path to Rdata folder"))
+    make_option(c("-d", "--paths_rdata"), type="character", default="/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecific",help="Path to Rdata folder"))
 
 parser <- OptionParser(option_list=option_list)
 opt <- parse_args(parser)
@@ -90,7 +90,7 @@ resultsDT <- lapply(names(loadedRData), function(x){
 names(resultsDT) <- names(loadedRData)
 
 
-
+message("binding results")
 resultsDTSample <- rbindlist(resultsDT, idcol = "condition")
 
 resultsDTSample <- resultsDTSample %>% mutate(LFClabel = case_when(log2FoldChange > 0 & padj <= opt$lfcCutoff ~ "up",
@@ -100,6 +100,9 @@ resultsDTSample <- resultsDTSample %>% mutate(LFClabel = case_when(log2FoldChang
 
 
 resultsDTSample$log2FoldChange[is.na(resultsDTSample$log2FoldChange)] <- 0
+
+fwrite(resultsDTSample, file = file.path("resultsRNA_DE_withMetadata.txt"), sep = "\t")
+
 
 # Use tidyr to reshape data: pivot so rows are LINE1 elements and columns are samples
 heatmap_data <- resultsDTSample %>%
@@ -113,6 +116,7 @@ heatmap_matrix <- as.data.frame(heatmap_data) %>%
 
 ##turn thi
 heatmap_matrix <- heatmap_matrix[, subSampleConds]
+fwrite(heatmap_matrix, file = file.path("heatmap_matrix.txt"), sep = "\t")
 
 
 pheatmap(heatmap_matrix,
@@ -335,3 +339,6 @@ pltClass <- ggplot(df_filteredCondClass, aes(x = condition, y = count, fill = LF
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggsave(pltClass, file = "RepeatsUp_down_countsGroups_per_Condition_Class.png", width = 10, height = 6)
+
+
+message("done running DE_RepeatsHeatmaps.R")

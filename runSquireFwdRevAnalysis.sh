@@ -13,6 +13,9 @@ define promoter motifs for LINE1
 # mkdir -p RepeatsDNAmeStats
 snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/RepeatsPromotersStats.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurmMinimal --jobs unlimited --cores all --use-conda -np
 
+# snakemake -s /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/RepeatsPromotersStats.smk --workflow-profile /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/config/slurmMinimal --jobs unlimited --cores all --use-conda -R merge_dna_rna_diagnostics -np
+
+
 # rm -r .snakemake logs results
 
 
@@ -24,7 +27,7 @@ Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_
 
 
 #4. Run locus-specific DE analysis
-Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_locusSpecificLINE1.R
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_locusSpecificLINE1.R --LocusSpecific TRUE
 
 #5. HeatMaps for DE analysis
-/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R

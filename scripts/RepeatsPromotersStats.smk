@@ -30,6 +30,7 @@ rule all:
 #        "results/merge_dna_rna_diagnostics/boxplot_fracMethyl_geom_mean_by_consensus.png",
 #        "results/merge_dna_rna_diagnostics/boxplot_fracMethyl_geom_mean_by_consensusCond.png",
 #        "results/merge_dna_rna_diagnostics/scatter_fpkm_vs_fracMethyl_geom_mean.png"
+#        "results/merge_dna_rna_diagnostics/merged_repeatsDNAme_RNA_table_WithConds.tsv",
 
 rule repeatsDNAme:
     input:

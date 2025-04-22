@@ -21,6 +21,12 @@ make_option(c("-d", "--metadata"), type = "character",
 # Parse arguments
 opt <- parse_args(OptionParser(option_list = option_list))
 
+# opt$mergedPath <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/mergeRNADNAme/merged_repeatsDNAme_RNA_table.tsv"
+# opt$outDir <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results"
+# opt$metadata <- "/data1/greenbab/projects/methylRNA/Methyl2Expression/data/preprocessed/RNA_seq/metadata_triplicates_recoded.csv"
+
+
+
 # Check if mergedPath is provided
 if (is.null(opt$mergedPath)) {
     stop("Error: --mergedPath argument is required.")
@@ -42,6 +48,23 @@ message("Loading merged data...")
 message(metadataDT)
 
 dataMerge <- mergedDNAmeRNADT[metadataDT[, c("condition","new_samples_name")], on=c("RNAsampleID"="new_samples_name")]
+
+fwrite(dataMerge, file.path(opt$outDir, "merged_repeatsDNAme_RNA_table_WithConds.tsv"), sep="\t", row.names=FALSE)
+
+
+splitDT <- split(dataMerge, dataMerge$TE_ID)
+
+pdf(file.path(opt$outDir, "scatterFPKMvsDNAme.pdf"), width = 10, height = 6)
+lapply(head(names(splitDT)), function(x) {
+  scatterPlot <- ggplot(data = splitDT[[x]]) + labs(title = x) +
+    geom_point(aes(x = fracMethyl.geom_mean, y = fpkm, color = condition), size = 4) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "bottom"
+    )
+})
+dev.off()
 
 # Create the boxplot
 pltDNAme <- ggplot(dataMerge, aes(x = filename, y = fracMethyl.geom_mean, fill = filename)) +
@@ -70,8 +93,22 @@ ggsave(pltDNAme, filename = file.path(opt$outDir, "boxplot_fracMethyl_geom_mean_
 L1Order <- c("L1Md_A", "L1Md_T", "L1Md_F", "L1Md_F2", "L1Md_F3", "L1Md_Gf")
 
 # Filter data for the specified consensus values and set the factor levels
-dataConsensus <- dataMerge[consensus %in% L1Order]
+dataConsensus <- dataMerge[consensus %in% L1Order & fpkm >= 2, ]
 dataConsensus$consensus <- factor(dataConsensus$consensus, levels = L1Order, ordered = TRUE)
+dataConsensusL1MdDT <- split(dataConsensus, dataConsensus$TE_ID)
+
+pdf(file.path(opt$outDir, "scatterFPKMvsDNAmeL1MD.pdf"), width = 10, height = 6)
+lapply(names(dataConsensusL1MdDT), function(x) {
+  scatterPlot <- ggplot(data = splitDT[[x]]) + labs(title = x) +
+    geom_point(aes(x = fracMethyl.geom_mean, y = fpkm, color = condition), size = 4) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "bottom"
+    )
+})
+dev.off()
+
 
 # Create the boxplot
 pltConsensus <- ggplot(dataConsensus, aes(x = consensus, y = fracMethyl.geom_mean, fill = consensus)) +

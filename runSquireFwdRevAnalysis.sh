@@ -31,3 +31,14 @@ Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_
 
 #5. HeatMaps for DE analysis
 Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R
+
+
+## Upset plot of DE analysis to know sharing
+### Run for all repeats
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecific/resultsAllRepeatsRNA_DE_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus CKi_DMSO,SETDB1i-CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO,SETDB1i_DMSO \
+#   --minsets 2 \
+#   --prefix minsets2 \
+#   --classes SINE,LTR,LINE,tRNA,scRNA,DNA,Other,RC,snRNA,RNA

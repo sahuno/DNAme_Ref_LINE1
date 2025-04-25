@@ -5,6 +5,12 @@
 #load libraries
 library(data.table)
 library(fst)
+library(S4Vectors)
+library(GenomicRanges)
+library(annotatr)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(tidyverse)
+# library(gUtils)
 
 minReadCounts <- 10
 
@@ -58,6 +64,60 @@ SQuireRepDT <- rbindlist(SQuireRepList, idcol= "sample")
 SQuireRepDT <- SQuireRepDT[!grep("\\?",class),]
 SQuireRepDT <- SQuireRepDT[!grep("\\?",clade),] #remove and not sure annotations
 
+
+# table(SQuireRepDT$chr)
+SQuireRepDT <- SQuireRepDT[!grepl("Un|_", chr)]
+# setnames(SQuireRepDT, "chr", "seqnames")
+setnames(SQuireRepDT, "strand", "ignoredStrand")
+
+# SQuireRepGr <- gUtils::dt2gr(SQuireRepDT)
+
+SQuireRepDF <- as.data.frame(SQuireRepDT)
+SQuireRepGr <- makeGRangesFromDataFrame(head(SQuireRepDF, 10), keep.extra.columns = TRUE, seqnames.field="chr", start.field="start", end.field="end", starts.in.df.are.0based = TRUE, ignore.strand = TRUE)
+
+
+
+# 2. See which mm10 annotation sets are available
+all_annots <- builtin_annotations()
+mouse_annots <- all_annots[grepl("^mm10_", all_annots)]
+print(mouse_annots)
+# 3. Build a subset of annotations
+annots_mm10 <- build_annotations(
+  genome     = "mm10",
+  annotations = c(
+    "mm10_genes_promoters",
+    "mm10_genes_exons",
+    "mm10_genes_introns",
+    "mm10_genes_intergenic",
+    "mm10_genes_5UTRs",
+    "mm10_genes_3UTRs"
+    )
+)
+
+annotated_mm10 <- annotate_regions(
+  regions     = SQuireRepGr,
+  annotations = annots_mm10,
+  ignore.strand = TRUE
+)
+
+annotated_mm10DT <- gUtils::gr2dt(annotated_mm10)#[, c("seqnames","start","end","annot.type")]
+annotated_mm10DT
+
+# unique(annotated_mm10DT)
+
+final_classification <- annotated_mm10DT %>%
+    mutate(annot= case_when(str_detect(annot.type, "intergenic") ~ "intergenic", 
+                            str_detect(annot.type, "introns|promoters|exons|5UTRs|3UTRs") ~ "intragenic",
+                            TRUE ~ NA_character_),
+                            geneID_n_Symbol = paste0(`annot.gene_id`,"|" ,`annot.symbol`)) %>% dplyr::select(!c("annot.seqnames", annot.start, annot.end, annot.width, annot.strand, annot.id, annot.tx_id, annot.gene_id, annot.symbol,annot.type))
+
+SQuireRepDT <- unique(final_classification)
+# head(as.data.frame(annotated_mm10)[, c("seqnames","start","end","annot.type")])
+
+
+
+
+# GenomicRanges::
 # SQuireRepDF <- as.data.table(plyr::ldply(SQuireRepList, data.table, .id = "sample"))
 
 
@@ -94,7 +154,8 @@ fwrite(SQuireRepDT2BedCounts, sep="\t", file = paste0("mergedSquireRepRNA/SQuire
 
 
 fwrite(SQuireRepDT2Bed, sep="\t", file = paste0("mergedSquireRepRNA/SQuireRepeatsValidReadCounts_Aggregated_FWD_REV.bed"), col.names = FALSE)
-fwrite(SQuireRepDT2Bed[class == "LINE",], sep="\t", file = paste0("mergedSquireRepRNA/SQuireL1ValidReadCounts_Aggregated_FWD_REV.bed"), col.names = FALSE) #use this for overlaps
+fwrite(SQuireRepDT2Bed[class == "LINE",], sep="\t", file = paste0("mergedSquireRepRNA/SQuireLINEsValidReadCounts_Aggregated_FWD_REV.bed"), col.names = FALSE) #use this for overlaps
+fwrite(SQuireRepDT2Bed[class == "LINE" & clade == "L1",], sep="\t", file = paste0("mergedSquireRepRNA/SQuireL1ValidReadCounts_Aggregated_FWD_REV.bed"), col.names = FALSE) #use this for overlaps
 write_fst(SQuireRepDT2Bed[class == "LINE",], path = paste0("mergedSquireRepRNA/SQuireLINEsValidReadCounts_Aggregated_FWD_REV.fst"))
 write_fst(SQuireRepDT2Bed[class == "LINE" & clade == "L1",], path = paste0("mergedSquireRepRNA/SQuireLINE1ValidReadCounts_Aggregated_FWD_REV.fst"))
 write_fst(unique(SQuireRepDT[class == "LINE" & clade == "L1",..colBed]), path = paste0("mergedSquireRepRNA/SQuireL1ValidnNonValidReadCounts_Aggregated_FWD_REV.fst")) #needed for RNA+MethylationSummary master table
@@ -127,16 +188,22 @@ write_fst(wide_DT_tot_counts, path = paste0("mergedSquireRepRNA/squireRepeatsAnn
 write_fst(wide_DT_fpkm, path = paste0("mergedSquireRepRNA/squireRepeatsAnnot_Aggregated_FWD_REV_fpkm.fst"))
 
 # mergedSquireRepRNA/SQuireRepeatsValidReadCounts_Aggregated_FWD_REV_totCounts.bed
-cmd = "bedtools intersect -a mergedSquireRepRNA/SQuireRepeatsValidReadCounts_Aggregated_FWD_REV.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -wa -wb -f 0.75 > overlaps75SquireRep_vs_L1_L1Base.bed"
-cmdLINEOverlaps = "bedtools intersect -a SQuireL1ValidReadCounts_Aggregated_FWD_REV.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -wa -wb -f 0.75 > overlaps75SquireLINE_vs_L1_L1Base.bed"
+cmd = "bedtools intersect -a mergedSquireRepRNA/SQuireRepeatsValidReadCounts_Aggregated_FWD_REV.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -wa -wb -f 0.75 > mergedSquireRepRNA/overlaps75SquireRep_vs_L1_L1Base.bed"
+cmdLINEOverlapsWaWb = "bedtools intersect -a mergedSquireRepRNA/SQuireL1ValidReadCounts_Aggregated_FWD_REV.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -wa -wb -f 0.75 > mergedSquireRepRNA/overlaps75SquireLINE_vs_L1_L1BaseWaWb.bed"
+cmdLINEOverlapsNoWaWb = "bedtools intersect -a mergedSquireRepRNA/SQuireL1ValidReadCounts_Aggregated_FWD_REV.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -f 0.75 > mergedSquireRepRNA/overlaps75SquireLINE_vs_L1_L1BaseNoWaWb.bed"
 
+##those with and without sufficient read counts
+cmdLINEAllOverlapsNoWaWb = "bedtools intersect -a mergedSquireRepRNA/SQuireL1ValidnNonValidReadCounts_Aggregated_FWD_REV.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -f 0.75 > mergedSquireRepRNA/overlaps75SquireLINE1All_vs_L1_L1BaseNoWaWb.bed"
 # cmd = "bedtools intersect -a mergedSquireRepRNA/SQuireRepeatsValidReadCounts_Aggregated_FWD_REV_totCounts.bed -b /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/database/L1BaseMmusculus/mmflil1_8438_noHeader.sorted.bed -wa -wb -f 0.75 > overlapsSquireRep_vs_L1_L1Base.bed"
+
 
 
 
 system(command = paste0(cmd))
 
 #oevrlaps with L1
-system(command = paste0(cmdLINEOverlaps))
+system(command = paste0(cmdLINEOverlapsWaWb))
+system(command = paste0(cmdLINEOverlapsNoWaWb))
+system(command = paste0(cmdLINEAllOverlapsNoWaWb))
 
 ## repeatsInterest <- c("SINE", "LINE")

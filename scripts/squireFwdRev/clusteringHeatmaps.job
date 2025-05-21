@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --job-name=clustering
+#SBATCH --partition=componc_cpu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --mem=32G       
+#SBATCH --time=6:00:00       
+#SBATCH --error=%J_%I.err    
+#SBATCH --output=%J_%I.out
+
+/home/ahunos/miniforge3/envs/r-env/bin/Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R \
+--lfcCutoff 0.05 \
+--l1Separately FALSE \
+--paths_rdata "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/LocusSpecific" \
+--FulllengthAnno "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/overlaps75SquireLINE_vs_L1_L1Base_wa.bed"
+
+# sbatch < /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/clusteringHeatmaps.job

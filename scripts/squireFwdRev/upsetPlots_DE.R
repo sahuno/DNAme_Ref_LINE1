@@ -27,6 +27,8 @@ option_list <- list(
               help="Comma‐separated classLabels to process [default: %default]"),
   make_option(c("-m", "--minsets"), type="integer", default=2,
               help="Minimum number of sets a feature must appear in [default: %default]"),
+  # make_option(c("--fullLenghth"), type="character", default=NULL,
+  #             help="plot fullLength LINE1 [default: %default]"),
   make_option(c("-o", "--prefix"),  type="character", default="upsetPlots",
               help="Output file prefix [default: %default]")
 )
@@ -75,9 +77,9 @@ preprocess_rna <- function(df_rna) {
 # 3) Filter by up/down and classLabel
 get_stats <- function(df, label = c("up","down"), classLabel) {
   label   <- match.arg(label)
-  df_filt <- df %>%
+df_filt <- df %>%
     filter(LFClabel == label, grepl(classLabel, class))
-  stats   <- df_filt %>%
+    stats   <- df_filt %>%
     count(condition, name = "n") %>%
     arrange(desc(n))
   list(df = df_filt, stats = stats)
@@ -121,6 +123,9 @@ plot_upset <- function(mat, path) {
 
 main <- function(rna_path, dna_path, focusConds,
                  classLabels, min_sets, prefix) {
+                  # if(plotFullLength){
+                  #   rna_path <- opt$fullLengthpath
+                  # }
   inputs <- read_inputs(rna_path, dna_path, focusConds)
   df_rna <- preprocess_rna(inputs$rna)
 
@@ -145,7 +150,7 @@ main <- function(rna_path, dna_path, focusConds,
       save_membership(filt,  mat_filt_file)
 
       cat("[", cls, "/", lbl, "] plotting dims:", dim(filt), "\n")
-      plot_upset(filt, plot_file)
+      plot_upset(full, plot_file)
     }
   }
 }
@@ -161,32 +166,87 @@ if (!interactive()) {
   )
 }
 
-## Run for only L1
-# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
-#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecific/resultsL1LocusSpecificRNA_DE_withMetadata.txt \
-#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
-#   --focus CKi_DMSO,SETDB1i-CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO,SETDB1i_DMSO \
-#   --minsets 2 \
-#   --prefix minsets2 \
-#   --classes LINE
+
 
 
 ### Run for all repeats
 # Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
-#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecific/resultsAllRepeatsRNA_DE_withMetadata.txt \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsAllRepeatsRNA_DE_withMetadata.txt \
 #   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
-#   --focus CKi_DMSO,SETDB1i-CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO,SETDB1i_DMSO \
+#   --focus AZA_DMSO,CKi_DMSO,SETDB1i-CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO,SETDB1i_DMSO \
 #   --minsets 2 \
 #   --prefix minsets2 \
-#   --classes SINE,LTR,LINE,tRNA,scRNA,DNA,Other,RC,snRNA,RNA
+#   --classes SINE,LTR,LINE,tRNA,scRNA,DNA,snRNA,RNA
 
-#rRNA,srpRNA
+#setdb1i
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsAllRepeatsRNA_DE_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus CKi_DMSO,SETDB1i-CKi_DMSO,SETDB1i_DMSO \
+#   --minsets 2 \
+#   --prefix minsets2NonFullLength \
+#   --classes SINE,LTR,LINE,tRNA,scRNA,DNA,snRNA,RNA
+
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsAllRepeatsRNA_DE_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO \
+#   --minsets 2 \
+#   --prefix minsets2NonFullLength \
+#   --classes SINE,LTR,LINE,tRNA,scRNA,DNA,snRNA,RNA
+
+
+#rRNA,srpRNA, Other,RC,
 # "SINE"   "LTR"    "LINE"   "tRNA"   "scRNA"  "DNA"    "Other"  "RC"     "snRNA"   "srpRNA" "RNA"  
-
 #   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecific/resultsAllRepeatsRNA_DE_withMetadata.txt  \
 
 
-# pathFulllength <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/overlaps75SquireLINE_vs_L1_L1Base_wa.bed"
 
+
+##### Full length LINE1
+# library(data.table)
+# library(tidyverse)
+# pathFulllength <- "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/mergedSquireRepRNA/overlaps75SquireLINE_vs_L1_L1Base_wa.bed"
 # colInterest <- "V11"
 # fullDT <- fread(pathFulllength, select = colInterest)
+# rnaDT <- fread("/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsL1LocusSpecificRNA_DE_withMetadata.txt")
+# rnaL1FullLengthDT <- rnaDT %>% filter(RepID %in% fullDT[[colInterest]])
+# fwrite(rnaL1FullLengthDT, "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsL1LocusSpecificRNA_DE_withMetadata_FullLength.txt", sep="\t", row.names=FALSE)
+
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsFromAllRepeatsRNA_DE_FullLengthL1_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus AZA_DMSO,CKi_DMSO,SETDB1i-CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO,SETDB1i_DMSO \
+#   --minsets 1 \
+#   --prefix minsets1 \
+#   --classes LINE
+
+# setdb1i
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsFromAllRepeatsRNA_DE_FullLengthL1_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus CKi_DMSO,SETDB1i-CKi_DMSO,SETDB1i_DMSO \
+#   --minsets 1 \
+#   --prefix minsets1FullLength \
+#   --classes LINE
+
+# QSTAT
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsFromAllRepeatsRNA_DE_FullLengthL1_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO \
+#   --minsets 1 \
+#   --prefix minsets1FullLength \
+#   --classes LINE
+
+
+
+
+## Run for only L1
+# Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/upsetPlots_DE.R \
+#   --rna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/DE_RepeatsHeatmaps/resultsL1LocusSpecificRNA_DE_withMetadata.txt \
+#   --dna /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/promoterMethyl/results/merged_repeatsDNAme_RNA_table_WithConds.tsv \
+#   --focus AZA_DMSO,CKi_DMSO,SETDB1i-CKi_DMSO,QSTAT-CKi_DMSO,QSTAT_DMSO,SETDB1i_DMSO \
+#   --minsets 2 \
+#   --prefix minsets2 \
+#   --classes LINE

@@ -7,6 +7,23 @@ default-resources:
     nodes: 1
 executor: slurm
 
+set-resources:
+    tldr:
+        slurm_partition: "componc_cpu"
+        slurm_account: "greenbab"
+        runtime: 2400
+        nodes: 1
+        # slurm_extra: "'--gres=gpu:1'"
+        mem_mb_per_cpu: 64000
+        cpus_per_task: 12
+    runMethylArtist:
+        slurm_partition: "componc_cpu"
+        slurm_account: "greenbab"
+        runtime: 2400
+        nodes: 1
+        # slurm_extra: "'--gres=gpu:1'"
+        mem_mb_per_cpu: 64000
+        cpus_per_task: 12
 # cluster-config:
 #   memory_constraint: "--mem={resources.mem_mb}"
 keep-incomplete: True

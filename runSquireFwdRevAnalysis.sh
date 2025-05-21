@@ -30,7 +30,8 @@ Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_
 Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_locusSpecificLINE1.R --LocusSpecific TRUE
 
 #5. HeatMaps for DE analysis
-Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R
+Rscript /data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/scripts/squireFwdRev/DE_RepeatsHeatmaps.R \
+--paths_rdata "/data1/greenbab/users/ahunos/apps/workflows/methylation_workflows/DNAme_Ref_LINE1/outputs/LocusSpecRepeatDE_lowQuaSamplesDropped/LocusSpecific" --lfcCutoff 0.05
 
 
 ## Upset plot of DE analysis to know sharing
